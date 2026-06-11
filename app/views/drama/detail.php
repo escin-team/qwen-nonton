@@ -88,9 +88,12 @@
                                 $ep = array('id' => $ep);
                             }
 
-                            // 1. Ambil ID Episode dengan aman
+                            // 1. Ambil ID Episode dengan aman - FLICKREELS MENGGUNAKAN 'chapterId'
                             $ep_id = '';
-                            if (isset($ep['id']) && !is_array($ep['id'])) {
+                            if (isset($ep['chapterId']) && !is_array($ep['chapterId'])) {
+                                // FlickReels uses chapterId as episode ID
+                                $ep_id = $ep['chapterId'];
+                            } elseif (isset($ep['id']) && !is_array($ep['id'])) {
                                 $ep_id = $ep['id'];
                             } elseif (isset($ep['episode_id'])) {
                                 $ep_id = $ep['episode_id'];

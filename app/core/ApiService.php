@@ -202,8 +202,14 @@ class ApiService {
             return array('data' => $response['data']);
         }
         
-        // Cek wrapper alternatif: 'items', 'list', 'result', 'items'
-        $wrapperKeys = array('items', 'list', 'result', 'movies', 'videos');
+        // FLICKREELS SPECIAL CASE: Response pakai wrapper 'items'
+        // Contoh: {"hasMore":true,"items":[{...},{...}]}
+        if (isset($response['items']) && is_array($response['items'])) {
+            return array('data' => $response['items']);
+        }
+        
+        // Cek wrapper alternatif: 'list', 'result', 'movies', 'videos'
+        $wrapperKeys = array('list', 'result', 'movies', 'videos');
         foreach ($wrapperKeys as $key) {
             if (isset($response[$key]) && is_array($response[$key])) {
                 return array('data' => $response[$key]);
