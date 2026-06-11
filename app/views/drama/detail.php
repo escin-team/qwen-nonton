@@ -18,7 +18,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- CRITICAL: Prevent hotlink protection by blocking referer header -->
     <meta name="referrer" content="no-referrer">
-    <title><?php echo isset($page_title) ? e($page_title) : APP_NAME; ?></title>
+    <title><?php echo isset($page_title) ? e($page_title) : SITE_NAME; ?></title>
     
     <!-- Bootstrap 4 CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
@@ -247,7 +247,7 @@
     <!-- Navigation Bar -->
     <nav class="navbar navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="<?php echo url('home'); ?>">
+            <a class="navbar-brand" href="<?php echo url('/'); ?>">
                 <i class="fas fa-play-circle"></i> Nontonin
             </a>
             
@@ -258,7 +258,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="<?php echo url('home'); ?>">
+                        <a class="nav-link" href="<?php echo url('/'); ?>">
                             <i class="fas fa-home"></i> Home
                         </a>
                     </li>
@@ -273,7 +273,7 @@
             <!-- Back Button -->
             <div class="row">
                 <div class="col-12">
-                    <a href="<?php echo url('home'); ?>" class="btn btn-back">
+                    <a href="<?php echo url('/'); ?>" class="btn btn-back">
                         <i class="fas fa-arrow-left"></i> Kembali ke Home
                     </a>
                 </div>
@@ -400,7 +400,7 @@
                     <i class="fas fa-exclamation-triangle" style="font-size: 5rem; color: #e94560;"></i>
                     <h3 style="color: #e94560;">Drama Tidak Ditemukan</h3>
                     <p>Drama yang Anda cari tidak ada atau tidak dapat dimuat.</p>
-                    <a href="<?php echo url('home'); ?>" class="btn btn-back" style="display: inline-block; margin-top: 20px;">
+                    <a href="<?php echo url('/'); ?>" class="btn btn-back" style="display: inline-block; margin-top: 20px;">
                         <i class="fas fa-arrow-left"></i> Kembali ke Home
                     </a>
                 </div>

@@ -262,7 +262,7 @@
     <!-- Navigation Bar -->
     <nav class="navbar navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="<?php echo url('home'); ?>">
+            <a class="navbar-brand" href="<?php echo url('/'); ?>">
                 <i class="fas fa-play-circle"></i> Nontonin
             </a>
             
@@ -273,7 +273,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item active">
-                        <a class="nav-link" href="<?php echo url('home'); ?>">
+                        <a class="nav-link" href="<?php echo url('/'); ?>">
                             <i class="fas fa-home"></i> Home
                         </a>
                     </li>
@@ -324,21 +324,40 @@
                     <?php foreach ($dramas as $drama): ?>
                         <?php 
                         // Safe access to drama data
+                        // Bug #8 Fix: Cek 'cover' dulu, fallback ke 'poster', lalu 'thumbnail'
                         $dramaId = isset($drama['id']) ? $drama['id'] : '';
                         $title = isset($drama['title']) ? $drama['title'] : 'Unknown Title';
-                        $poster = isset($drama['poster']) ? $drama['poster'] : '';
-                        $provider = isset($drama['provider']) ? $drama['provider'] : 'unknown';
                         
-                        // Skip if no ID
-                        if (empty($dramaId)) continue;
+                        // Cek cover dulu (API return 'cover'), fallback ke poster/thumbnail
+                        $cover = '';
+                        if (isset($drama['cover']) && !empty($drama['cover'])) {
+                            $cover = $drama['cover'];
+                        } elseif (isset($drama['poster']) && !empty($drama['poster'])) {
+                            $cover = $drama['poster'];
+                        } elseif (isset($drama['thumbnail']) && !empty($drama['thumbnail'])) {
+                            $cover = $drama['thumbnail'];
+                        }
+                        
+                        // Cek source_provider dulu, fallback ke provider/source
+                        $provider = '';
+                        if (isset($drama['source_provider']) && !empty($drama['source_provider'])) {
+                            $provider = $drama['source_provider'];
+                        } elseif (isset($drama['provider']) && !empty($drama['provider'])) {
+                            $provider = $drama['provider'];
+                        } elseif (isset($drama['source']) && !empty($drama['source'])) {
+                            $provider = $drama['source'];
+                        }
+                        
+                        // Skip jika empty id/title/provider
+                        if (empty($dramaId) || empty($title) || empty($provider)) continue;
                         ?>
                         <div class="col-6 col-md-3 col-lg-2 mb-4">
                             <div class="drama-card" onclick="window.location.href='<?php echo url('drama/' . $provider . '/' . $dramaId); ?>'">
                                 <div class="card-img-wrapper">
-                                    <img src="<?php echo !empty($poster) ? e($poster) : 'https://via.placeholder.com/200x300?text=No+Poster'; ?>" 
+                                    <img src="<?php echo !empty($cover) ? e($cover) : url('assets/img/no-poster.svg'); ?>" 
                                          class="card-img-top" 
                                          alt="<?php echo e($title); ?>"
-                                         onerror="this.src='https://via.placeholder.com/200x300?text=No+Poster'">
+                                         onerror="this.onerror=null; this.src='<?php echo url('assets/img/no-poster.svg'); ?>';">
                                     
                                     <!-- Provider Badge -->
                                     <span class="provider-badge"><?php echo e($provider); ?></span>

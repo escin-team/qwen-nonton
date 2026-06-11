@@ -1,0 +1,8 @@
+<!-- File: assets/img/no-poster.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300">
+    <rect width="200" height="300" fill="#1e1e1e"/>
+    <text x="100" y="140" font-family="Arial, sans-serif" font-size="16" fill="#bb86fc" text-anchor="middle">No Poster</text>
+    <text x="100" y="165" font-family="Arial, sans-serif" font-size="12" fill="#888" text-anchor="middle">Image Not Available</text>
+    <path d="M70 190 L100 220 L130 190" stroke="#bb86fc" stroke-width="2" fill="none"/>
+    <rect x="85" y="220" width="30" height="40" stroke="#bb86fc" stroke-width="2" fill="none"/>
+</svg>

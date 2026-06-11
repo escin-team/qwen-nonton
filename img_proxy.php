@@ -32,8 +32,8 @@ $imageUrl = isset($_GET['url']) ? $_GET['url'] : '';
 // Validate URL
 if (empty($imageUrl)) {
     // Return placeholder image
-    header('Content-Type: image/jpeg');
-    readfile(__DIR__ . '/assets/images/no-poster.jpg');
+    header('Content-Type: image/svg+xml');
+    readfile(__DIR__ . '/assets/img/no-poster.svg');
     exit;
 }
 
@@ -43,9 +43,9 @@ $imageUrl = urldecode($imageUrl);
 // Validate that it's a valid HTTP/HTTPS URL
 if (!preg_match('/^https?:\/\//i', $imageUrl)) {
     // Invalid URL, return placeholder
-    header('Content-Type: image/jpeg');
-    if (file_exists(__DIR__ . '/assets/images/no-poster.jpg')) {
-        readfile(__DIR__ . '/assets/images/no-poster.jpg');
+    header('Content-Type: image/svg+xml');
+    if (file_exists(__DIR__ . '/assets/img/no-poster.svg')) {
+        readfile(__DIR__ . '/assets/img/no-poster.svg');
     } else {
         // Create simple placeholder
         echo base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
@@ -121,7 +121,7 @@ function fetchImage($url) {
     }
     
     // Verify that response is actually an image
-    $finfo = new finfo_open(FILEINFO_MIME_TYPE);
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_buffer($finfo, $imageData);
     finfo_close($finfo);
     
@@ -140,10 +140,10 @@ $imageData = fetchImage($imageUrl);
 
 if ($imageData === null) {
     // Failed to fetch, serve placeholder
-    header('Content-Type: image/jpeg');
+    header('Content-Type: image/svg+xml');
     header('Cache-Control: public, max-age=3600');
-    if (file_exists(__DIR__ . '/assets/images/no-poster.jpg')) {
-        readfile(__DIR__ . '/assets/images/no-poster.jpg');
+    if (file_exists(__DIR__ . '/assets/img/no-poster.svg')) {
+        readfile(__DIR__ . '/assets/img/no-poster.svg');
     } else {
         // Simple 1x1 transparent GIF as last resort
         header('Content-Type: image/gif');
