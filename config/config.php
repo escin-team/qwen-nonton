@@ -214,7 +214,20 @@ if (!function_exists('get_flash')) {
 if (!function_exists('csrf_token')) {
     function csrf_token() {
         if (!isset($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+            // FIX: random_bytes hanya tersedia di PHP 7+, fallback untuk PHP 5.6
+            if (function_exists('random_bytes')) {
+                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+            } elseif (extension_loaded('mcrypt')) {
+                // Fallback dengan mcrypt (PHP 5.x)
+                $_SESSION['csrf_token'] = bin2hex(mcrypt_create_iv(32, MCRYPT_DEV_URANDOM));
+            } else {
+                // Fallback terakhir: gunakan mt_rand (kurang aman tapi berfungsi)
+                $token = '';
+                for ($i = 0; $i < 32; $i++) {
+                    $token .= chr(mt_rand(0, 255));
+                }
+                $_SESSION['csrf_token'] = bin2hex($token);
+            }
         }
         return $_SESSION['csrf_token'];
     }
@@ -225,7 +238,25 @@ if (!function_exists('csrf_token')) {
  */
 if (!function_exists('verify_csrf')) {
     function verify_csrf($token) {
-        return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+        if (!isset($_SESSION['csrf_token'])) {
+            return false;
+        }
+        // FIX: hash_equals hanya tersedia di PHP 5.6+, fallback untuk versi lebih lama
+        if (function_exists('hash_equals')) {
+            return hash_equals($_SESSION['csrf_token'], $token);
+        } else {
+            // Fallback manual comparison (constant-time)
+            $a = $_SESSION['csrf_token'];
+            $b = $token;
+            if (strlen($a) != strlen($b)) {
+                return false;
+            }
+            $result = 0;
+            for ($i = 0; $i < strlen($a); $i++) {
+                $result |= ord($a[$i]) ^ ord($b[$i]);
+            }
+            return $result === 0;
+        }
     }
 }
 
