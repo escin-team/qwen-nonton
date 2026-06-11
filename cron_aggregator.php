@@ -36,13 +36,13 @@ if (isset($_GET['key'])) {
     }
 }
 
-// 3. Load konfigurasi - FIX: Path yang benar
+// 3. Load konfigurasi - FIX: Path yang benar (config ada di root /workspace/config/)
 if (file_exists(__DIR__ . '/config/config.php')) {
     require_once __DIR__ . '/config/config.php';
-} elseif (file_exists(__DIR__ . '/app/config/config.php')) {
-    require_once __DIR__ . '/app/config/config.php';
+} elseif (file_exists(dirname(__DIR__) . '/config/config.php')) {
+    require_once dirname(__DIR__) . '/config/config.php';
 } else {
-    die('❌ ERROR: File config.php tidak ditemukan!');
+    die('❌ ERROR: File config.php tidak ditemukan! Cek path: ' . __DIR__);
 }
 
 // Set waktu eksekusi maksimal (penting untuk agregasi banyak provider)
@@ -434,35 +434,46 @@ flush();
 ob_flush();
 
 // ===========================================================================
-// DAFTAR 15 ENDPOINT TERVERIFIKASI (berdasarkan dokumentasi resmi DramaBos)
+// DAFTAR 32 ENDPOINT TERVERIFIKASI (berdasarkan dokumentasi resmi DramaBos)
 // ===========================================================================
 $verifiedEndpoints = array(
-    // ShortMax endpoints
-    array('provider' => 'shortmax', 'endpoint' => '/shortmax/api/v1/popular', 'name' => 'ShortMax Popular'),
+    // ===== A. Provider dengan Pola Standar (/api/v1/) =====
+    array('provider' => 'reelshort', 'endpoint' => '/reelshort/api/v1/featured', 'name' => 'ReelShort Featured'),
+    array('provider' => 'starshort', 'endpoint' => '/starshort/api/v1/trending', 'name' => 'StarShort Trending'),
+    array('provider' => 'dramabite', 'endpoint' => '/dramabite/api/v1/recommend', 'name' => 'DramaBite Recommend'),
+    array('provider' => 'goodshort', 'endpoint' => '/goodshort/api/v1/toppicks', 'name' => 'GoodShort Top Picks'),
+    array('provider' => 'reelbuzz', 'endpoint' => '/reelbuzz/api/v1/buzz', 'name' => 'ReelBuzz Buzz'),
+    array('provider' => 'freereels', 'endpoint' => '/freereels/api/v1/trending', 'name' => 'FreeReels Trending'),
+    array('provider' => 'vigloo', 'endpoint' => '/vigloo/api/v1/trending', 'name' => 'Vigloo Trending'),
+    array('provider' => 'dramawave', 'endpoint' => '/dramawave/api/v1/featured', 'name' => 'DramaWave Featured'),
+    array('provider' => 'microdrama', 'endpoint' => '/microdrama/api/v1/feed', 'name' => 'MicroDrama Feed'),
+    
+    // ===== B. Provider dengan Pola Unik =====
     array('provider' => 'shortmax', 'endpoint' => '/shortmax/api/v1/home', 'name' => 'ShortMax Home'),
+    array('provider' => 'shortmax', 'endpoint' => '/shortmax/api/v1/popular', 'name' => 'ShortMax Popular'),
     array('provider' => 'shortmax', 'endpoint' => '/shortmax/api/v1/foryou', 'name' => 'ShortMax For You'),
-    
-    // FlickReels endpoints
-    array('provider' => 'flickreels', 'endpoint' => '/flickreels/api/flickreels/trending?lang=en', 'name' => 'FlickReels Trending'),
-    
-    // DramaBox endpoints
     array('provider' => 'dramabox', 'endpoint' => '/dramabox/api/v1/discover', 'name' => 'DramaBox Discover'),
     array('provider' => 'dramabox', 'endpoint' => '/dramabox/api/v1/rank', 'name' => 'DramaBox Rank'),
-    
-    // ReelShort endpoints
-    array('provider' => 'reelshort', 'endpoint' => '/reelshort/api/v1/featured', 'name' => 'ReelShort Featured'),
-    
-    // StarShort endpoints
-    array('provider' => 'starshort', 'endpoint' => '/starshort/api/v1/trending', 'name' => 'StarShort Trending'),
-    
-    // DramaBite endpoints
-    array('provider' => 'dramabite', 'endpoint' => '/dramabite/api/v1/recommend', 'name' => 'DramaBite Recommend'),
-    
-    // GoodShort endpoints
-    array('provider' => 'goodshort', 'endpoint' => '/goodshort/api/v1/toppicks', 'name' => 'GoodShort Top Picks'),
-    
-    // ReelBuzz endpoints
-    array('provider' => 'reelbuzz', 'endpoint' => '/reelbuzz/api/v1/buzz', 'name' => 'ReelBuzz Buzz')
+    array('provider' => 'flickreels', 'endpoint' => '/flickreels/api/flickreels/trending?lang=en', 'name' => 'FlickReels Trending'),
+    array('provider' => 'idrama', 'endpoint' => '/idrama/home?lang=id', 'name' => 'iDrama Home'),
+    array('provider' => 'bilitv', 'endpoint' => '/bilitv/api/v1/home', 'name' => 'BiliTV Home'),
+    array('provider' => 'netshort', 'endpoint' => '/netshort/api/v1/hot', 'name' => 'NetShort Hot'),
+    array('provider' => 'melolo', 'endpoint' => '/melolo/api/v1/hot', 'name' => 'Melolo Hot'),
+    array('provider' => 'velolo', 'endpoint' => '/velolo/api/v1/trending', 'name' => 'Velolo Trending'),
+    array('provider' => 'stardusttv', 'endpoint' => '/stardusttv/api/v1/stellar', 'name' => 'StardustTV Stellar'),
+    array('provider' => 'serialplus', 'endpoint' => '/serialplus/api/v1/weekly', 'name' => 'SerialPlus Weekly'),
+    array('provider' => 'dotdrama', 'endpoint' => '/dotdrama/api/v1/featured', 'name' => 'DotDrama Featured'),
+    array('provider' => 'rapidtv', 'endpoint' => '/rapidtv/api/v1/trending', 'name' => 'RapidTV Trending'),
+    array('provider' => 'shortswave', 'endpoint' => '/shortswave/api/v1/wave', 'name' => 'ShortsWave Wave'),
+    array('provider' => 'dramanova', 'endpoint' => '/dramanova/api/v1/nova', 'name' => 'DramaNova Nova'),
+    array('provider' => 'cubetv', 'endpoint' => '/cubetv/api/v1/hot', 'name' => 'CubeTV Hot'),
+    array('provider' => 'flareflow', 'endpoint' => '/flareflow/api/v1/flare', 'name' => 'FlareFlow Flare'),
+    array('provider' => 'moboreels', 'endpoint' => '/moboreels/api/v1/hot', 'name' => 'MoboReels Hot'),
+    array('provider' => 'happyshort', 'endpoint' => '/happyshort/api/v1/happy', 'name' => 'HappyShort Happy'),
+    array('provider' => 'reelife', 'endpoint' => '/reelife/api/v1/daily', 'name' => 'Reelife Daily'),
+    array('provider' => 'pinedrama', 'endpoint' => '/pinedrama/api/v1/hot', 'name' => 'PineDrama Hot'),
+    array('provider' => 'flextv', 'endpoint' => '/flextv/api/v1/trending', 'name' => 'FlexTV Trending'),
+    array('provider' => 'reelala', 'endpoint' => '/reelala/api/v1/hot', 'name' => 'Reelala Hot')
 );
 
 $totalEndpoints = count($verifiedEndpoints);
