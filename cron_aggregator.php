@@ -209,6 +209,11 @@ if (!function_exists('compareByPriority')) {
         return $priorityA - $priorityB;
     }
 }
+
+// ===========================================================================
+// MULAI OUTPUT HTML
+// ===========================================================================
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
