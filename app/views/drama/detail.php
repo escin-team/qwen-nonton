@@ -292,11 +292,22 @@
                     <div class="col-md-4 mb-4">
                         <div class="drama-poster">
                             <?php 
-                            $poster = isset($drama['poster']) && !empty($drama['poster']) ? $drama['poster'] : 'https://via.placeholder.com/300x450?text=No+Poster';
+                            // Prioritaskan cover, fallback ke poster, lalu thumbnail
+                            $poster = '';
+                            if (isset($drama['cover']) && !empty($drama['cover'])) {
+                                $poster = $drama['cover'];
+                            } elseif (isset($drama['poster']) && !empty($drama['poster'])) {
+                                $poster = $drama['poster'];
+                            } elseif (isset($drama['thumbnail']) && !empty($drama['thumbnail'])) {
+                                $poster = $drama['thumbnail'];
+                            }
+                            
+                            // Gunakan image proxy untuk menghindari hotlink protection
+                            $posterUrl = !empty($poster) ? url('img_proxy.php?url=' . urlencode($poster)) : url('assets/img/no-poster.svg');
                             ?>
-                            <img src="<?php echo e($poster); ?>" 
+                            <img src="<?php echo $posterUrl; ?>" 
                                  alt="<?php echo isset($drama['title']) ? e($drama['title']) : 'Drama Poster'; ?>"
-                                 onerror="this.src='https://via.placeholder.com/300x450?text=No+Poster'">
+                                 onerror="this.onerror=null; this.src='<?php echo url('assets/img/no-poster.svg'); ?>';">
                         </div>
                     </div>
                     
