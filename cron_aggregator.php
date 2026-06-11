@@ -549,7 +549,7 @@ foreach ($verifiedEndpoints as $index => $endpointInfo) {
         echo "<script>addLog('⏳ Menunggu 1.5 detik sebelum endpoint berikutnya...', 'warning');</script>";
         flush();
         ob_flush();
-        sleep(1.5);
+        usleep(1500000); // 1.5 detik = 1,500,000 microseconds (sleep() hanya integer)
     }
 }
 
@@ -572,7 +572,10 @@ $globalFeed = $uniqueFeed;
 
 // Sort by priority (ShortMax dan FlickReels first, then others)
 $priorityOrder = array('shortmax', 'flickreels', 'dramabox', 'reelshort', 'starshort', 'dramabite', 'goodshort', 'reelbuzz');
-usort($globalFeed, function($a, $b) use ($priorityOrder) {
+
+// Custom comparison function untuk usort (PHP 5.6 compatible)
+function compareByPriority($a, $b) {
+    global $priorityOrder;
     $providerA = isset($a['source_provider']) ? $a['source_provider'] : 'zzz';
     $providerB = isset($b['source_provider']) ? $b['source_provider'] : 'zzz';
     $priorityA = array_search($providerA, $priorityOrder);
@@ -580,7 +583,9 @@ usort($globalFeed, function($a, $b) use ($priorityOrder) {
     if ($priorityA === false) $priorityA = 999;
     if ($priorityB === false) $priorityB = 999;
     return $priorityA - $priorityB;
-});
+}
+
+usort($globalFeed, 'compareByPriority');
 
 // Save aggregated data to global_feed.json ATOMICALLY
 echo "<script>addLog('💾 Menyimpan " . count($globalFeed) . " item ke global_feed.json (atomic write)...', 'info');</script>";
