@@ -107,4 +107,61 @@ class AuthController extends Controller {
             'title' => 'Register - Nontonin'
         ));
     }
+
+    /**
+     * FIX BUG #4: Method register() yang hilang - Menangani registrasi user baru
+     * Dipanggil saat user submit form: /auth/register (POST)
+     */
+    public function register() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('auth/register');
+            return;
+        }
+
+        $username = isset($_POST['username']) ? trim($_POST['username']) : '';
+        $email    = isset($_POST['email'])    ? trim($_POST['email'])    : '';
+        $password = isset($_POST['password']) ? $_POST['password']       : '';
+
+        if (empty($username) || empty($password) || empty($email)) {
+            $_SESSION['flash_error'] = 'Semua field wajib diisi!';
+            redirect('auth/register');
+            return;
+        }
+
+        if (strlen($password) < 6) {
+            $_SESSION['flash_error'] = 'Password minimal 6 karakter!';
+            redirect('auth/register');
+            return;
+        }
+
+        try {
+            // FIX BUG #7: Gunakan Database::getInstance() langsung (lazy connection)
+            $db = Database::getInstance()->getConnection();
+
+            // Cek apakah username sudah ada
+            $stmt = $db->prepare("SELECT id FROM users WHERE username = ? LIMIT 1");
+            $stmt->execute(array($username));
+            if ($stmt->fetch()) {
+                $_SESSION['flash_error'] = 'Username sudah digunakan!';
+                redirect('auth/register');
+                return;
+            }
+
+            // Hash password dengan bcrypt
+            $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+
+            // Insert user baru
+            $stmt = $db->prepare(
+                "INSERT INTO users (username, email, password, created_at) VALUES (?, ?, ?, NOW())"
+            );
+            $stmt->execute(array($username, $email, $hashedPassword));
+
+            $_SESSION['flash_success'] = 'Registrasi berhasil! Silakan login.';
+            redirect('auth/login');
+
+        } catch (Exception $e) {
+            $_SESSION['flash_error'] = 'Terjadi kesalahan sistem. Coba lagi nanti.';
+            redirect('auth/register');
+        }
+    }
 }

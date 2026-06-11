@@ -5,12 +5,24 @@
  */
 
 class Controller {
-    protected $db;
+    protected $db = null;  // FIX BUG #7: Lazy DB connection - jangan langsung konek
     protected $api;
     
     public function __construct() {
-        $this->db = Database::getInstance()->getConnection();
-        $this->api = new ApiService();
+        // HAPUS: $this->db = Database::getInstance()->getConnection();
+        // DB hanya akan konek saat benar-benar diperlukan via getDb()
+        $this->api = new ApiService(); // API tetap diinisialisasi
+    }
+    
+    /**
+     * FIX BUG #7: Getter lazy - hanya konek DB saat benar-benar diperlukan
+     * @return PDO|null
+     */
+    protected function getDb() {
+        if ($this->db === null) {
+            $this->db = Database::getInstance()->getConnection();
+        }
+        return $this->db;
     }
     
     /**

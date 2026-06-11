@@ -26,7 +26,8 @@ class HomeController extends Controller {
     
     public function __construct() {
         parent::__construct();
-        $this->apiService = new ApiService();
+        // FIX BUG #6: Gunakan $this->api dari parent daripada membuat ApiService baru
+        $this->apiService = $this->api;
         
         if (session_status() === PHP_SESSION_NONE) {
             session_start();

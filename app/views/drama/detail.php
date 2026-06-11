@@ -128,7 +128,11 @@
                             
                             $ep_counter++;
                         ?>
-                        <a href="<?php echo url('watch/' . e($provider) . '/' . e($drama_id) . '/' . e($ep_id)); ?>" 
+                        <a href="<?php 
+                            // FIX BUG #3: FlickReels menggunakan chapterId, provider lain menggunakan nomor episode
+                            $watch_ep_param = ($provider === 'flickreels') ? $ep_id : $ep_num;
+                            echo url('watch/' . e($provider) . '/' . e($drama_id) . '/' . e($watch_ep_param)); 
+                        ?>" 
                            class="btn episode-btn">
                             Ep <?php echo e($ep_num); ?>
                         </a>

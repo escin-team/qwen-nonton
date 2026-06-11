@@ -45,6 +45,16 @@ if (file_exists(__DIR__ . '/config/config.php')) {
     die('❌ ERROR: File config.php tidak ditemukan! Cek path: ' . __DIR__);
 }
 
+// FIX BUG #1: Fallback e() jika config.php gagal load atau framework helper tidak tersedia
+if (!function_exists('e')) {
+    function e($value) {
+        if ($value === null || $value === false || is_array($value) || is_object($value)) {
+            return '';
+        }
+        return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+    }
+}
+
 // Set waktu eksekusi maksimal (penting untuk agregasi banyak provider)
 ini_set('max_execution_time', 300); // 5 menit
 set_time_limit(300);
@@ -73,8 +83,8 @@ if (!function_exists('fetchFromApi')) {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15); // FIX BUG #1: Kurangi dari 30 ke 15 untuk ByetHost
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8); // FIX BUG #1: Kurangi connect timeout
         
         // BYPASS SSL VERIFICATION - Diperlukan untuk ByetHost/AeonFree
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -593,10 +603,10 @@ foreach ($verifiedEndpoints as $index => $endpointInfo) {
     
     // Beri jeda 1.5 detik antar request untuk hindari rate limit API
     if ($index < $totalEndpoints - 1) {
-        echo "<script>addLog('⏳ Menunggu 1.5 detik sebelum endpoint berikutnya...', 'warning');</script>";
+        echo "<script>addLog('⏳ Menunggu 0.5 detik sebelum endpoint berikutnya...', 'warning');</script>";
         flush();
         ob_flush();
-        usleep(1500000); // 1.5 detik = 1,500,000 microseconds (sleep() hanya integer)
+        usleep(500000); // FIX BUG #1: Kurangi dari 1.5 detik ke 0.5 detik untuk ByetHost (500,000 microseconds)
     }
 }
 
