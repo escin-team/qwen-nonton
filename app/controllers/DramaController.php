@@ -37,13 +37,17 @@ class DramaController extends Controller {
             $detail_res = $api->getDramaDetail($provider, $id);
             $detail = array();
             
-            // Normalisasi response detail
+            // Normalisasi response detail - FLICKREELS SPECIAL CASE
+            // FlickReels detail response TIDAK pakai wrapper 'data', langsung object
+            // Contoh: {"cover":"...","episodes":[...],"id":"26","title":"..."}
             if ($detail_res) {
+                // Cek jika response punya wrapper 'data'
                 if (isset($detail_res['data']) && is_array($detail_res['data'])) {
                     $detail = $detail_res['data'];
                 } elseif (is_array($detail_res) && isset($detail_res[0])) {
                     $detail = $detail_res[0];
                 } elseif (is_array($detail_res) && !isset($detail_res['error'])) {
+                    // FLICKREELS: Response langsung tanpa wrapper, pakai sebagai detail
                     $detail = $detail_res;
                 }
             }
@@ -52,13 +56,23 @@ class DramaController extends Controller {
             $episodes_res = $api->getEpisodes($provider, $id);
             $episodes = array();
             
-            // Normalisasi response episodes
+            // Normalisasi response episodes - FLICKREELS SPECIAL CASE
+            // FlickReels episodes ada di dalam $detail['episodes'] ATAU dari endpoint terpisah
             if ($episodes_res) {
                 if (isset($episodes_res['data']) && is_array($episodes_res['data'])) {
                     $episodes = $episodes_res['data'];
                 } elseif (is_array($episodes_res) && isset($episodes_res[0])) {
                     $episodes = $episodes_res;
+                } elseif (is_array($episodes_res) && !isset($episodes_res['error'])) {
+                    // FLICKREELS: Response langsung tanpa wrapper
+                    $episodes = $episodes_res;
                 }
+            }
+            
+            // FALLBACK: Jika episodes masih kosong tapi detail punya 'episodes' array
+            // FlickReels kadang embed episodes di dalam detail response
+            if (empty($episodes) && isset($detail['episodes']) && is_array($detail['episodes'])) {
+                $episodes = $detail['episodes'];
             }
 
             // Pastikan minimal ada ID dan Title, jika tidak, anggap drama tidak ditemukan
@@ -109,13 +123,25 @@ class DramaController extends Controller {
             
             // Ekstrak URL dari berbagai kemungkinan struktur JSON API
             if ($stream_res) {
-                if (isset($stream_res['data']['url'])) $videoUrl = $stream_res['data']['url'];
-                elseif (isset($stream_res['data']['stream_url'])) $videoUrl = $stream_res['data']['stream_url'];
-                elseif (isset($stream_res['data']['hls_url'])) $videoUrl = $stream_res['data']['hls_url'];
-                elseif (isset($stream_res['url'])) $videoUrl = $stream_res['url'];
-                elseif (isset($stream_res['stream_url'])) $videoUrl = $stream_res['stream_url'];
-                elseif (isset($stream_res['hls'])) $videoUrl = $stream_res['hls'];
-                elseif (is_string($stream_res) && strpos($stream_res, '.m3u8') !== false) {
+                // FLICKREELS SPECIAL CASE: Response langsung punya 'hlsUrl' tanpa wrapper
+                // Contoh: {"hlsUrl":"https://...","locked":false,"number":1}
+                if (isset($stream_res['hlsUrl'])) {
+                    $videoUrl = $stream_res['hlsUrl'];
+                } elseif (isset($stream_res['data']['hlsUrl'])) {
+                    $videoUrl = $stream_res['data']['hlsUrl'];
+                } elseif (isset($stream_res['data']['url'])) {
+                    $videoUrl = $stream_res['data']['url'];
+                } elseif (isset($stream_res['data']['stream_url'])) {
+                    $videoUrl = $stream_res['data']['stream_url'];
+                } elseif (isset($stream_res['data']['hls_url'])) {
+                    $videoUrl = $stream_res['data']['hls_url'];
+                } elseif (isset($stream_res['url'])) {
+                    $videoUrl = $stream_res['url'];
+                } elseif (isset($stream_res['stream_url'])) {
+                    $videoUrl = $stream_res['stream_url'];
+                } elseif (isset($stream_res['hls'])) {
+                    $videoUrl = $stream_res['hls'];
+                } elseif (is_string($stream_res) && strpos($stream_res, '.m3u8') !== false) {
                     $videoUrl = $stream_res;
                 }
             }
