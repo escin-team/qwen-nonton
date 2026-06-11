@@ -208,8 +208,15 @@ class ApiService {
             return array('data' => $response['items']);
         }
         
-        // Cek wrapper alternatif: 'list', 'result', 'movies', 'videos'
-        $wrapperKeys = array('list', 'result', 'movies', 'videos');
+        // FLICKREELS EPISODES SPECIAL CASE: Response langsung array episodes tanpa wrapper
+        // Contoh: [{"chapterId":"1108","number":1}, {"chapterId":"1109","number":2}, ...]
+        // Deteksi: jika punya key 'episodes' yang berisi array
+        if (isset($response['episodes']) && is_array($response['episodes'])) {
+            return array('data' => $response['episodes']);
+        }
+        
+        // Cek wrapper alternatif: 'list', 'result', 'movies', 'videos', 'chapters'
+        $wrapperKeys = array('list', 'result', 'movies', 'videos', 'chapters');
         foreach ($wrapperKeys as $key) {
             if (isset($response[$key]) && is_array($response[$key])) {
                 return array('data' => $response[$key]);

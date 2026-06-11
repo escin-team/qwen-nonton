@@ -69,10 +69,19 @@ class DramaController extends Controller {
                 }
             }
             
-            // FALLBACK: Jika episodes masih kosong tapi detail punya 'episodes' array
+            // FALLBACK 1: Jika episodes masih kosong tapi detail punya 'episodes' array
             // FlickReels kadang embed episodes di dalam detail response
             if (empty($episodes) && isset($detail['episodes']) && is_array($detail['episodes'])) {
                 $episodes = $detail['episodes'];
+            }
+            
+            // FALLBACK 2: Jika episodes masih kosong, coba ambil dari endpoint terpisah dengan cache lebih singkat
+            // Ini untuk memastikan episode selalu muncul meski cache detail masih lama
+            if (empty($episodes)) {
+                $episodes_res_fresh = $api->getEpisodes($provider, $id, 300); // Cache 5 menit saja
+                if ($episodes_res_fresh && isset($episodes_res_fresh['data']) && is_array($episodes_res_fresh['data'])) {
+                    $episodes = $episodes_res_fresh['data'];
+                }
             }
 
             // Pastikan minimal ada ID dan Title, jika tidak, anggap drama tidak ditemukan
@@ -125,24 +134,43 @@ class DramaController extends Controller {
             if ($stream_res) {
                 // FLICKREELS SPECIAL CASE: Response langsung punya 'hlsUrl' tanpa wrapper
                 // Contoh: {"hlsUrl":"https://...","locked":false,"number":1}
-                if (isset($stream_res['hlsUrl'])) {
+                if (isset($stream_res['hlsUrl']) && !empty($stream_res['hlsUrl'])) {
                     $videoUrl = $stream_res['hlsUrl'];
-                } elseif (isset($stream_res['data']['hlsUrl'])) {
+                } elseif (isset($stream_res['data']['hlsUrl']) && !empty($stream_res['data']['hlsUrl'])) {
                     $videoUrl = $stream_res['data']['hlsUrl'];
-                } elseif (isset($stream_res['data']['url'])) {
+                } elseif (isset($stream_res['data']['url']) && !empty($stream_res['data']['url'])) {
                     $videoUrl = $stream_res['data']['url'];
-                } elseif (isset($stream_res['data']['stream_url'])) {
+                } elseif (isset($stream_res['data']['stream_url']) && !empty($stream_res['data']['stream_url'])) {
                     $videoUrl = $stream_res['data']['stream_url'];
-                } elseif (isset($stream_res['data']['hls_url'])) {
+                } elseif (isset($stream_res['data']['hls_url']) && !empty($stream_res['data']['hls_url'])) {
                     $videoUrl = $stream_res['data']['hls_url'];
-                } elseif (isset($stream_res['url'])) {
+                } elseif (isset($stream_res['url']) && !empty($stream_res['url'])) {
                     $videoUrl = $stream_res['url'];
-                } elseif (isset($stream_res['stream_url'])) {
+                } elseif (isset($stream_res['stream_url']) && !empty($stream_res['stream_url'])) {
                     $videoUrl = $stream_res['stream_url'];
-                } elseif (isset($stream_res['hls'])) {
+                } elseif (isset($stream_res['hls']) && !empty($stream_res['hls'])) {
                     $videoUrl = $stream_res['hls'];
                 } elseif (is_string($stream_res) && strpos($stream_res, '.m3u8') !== false) {
                     $videoUrl = $stream_res;
+                }
+                
+                // FALLBACK: Jika masih kosong, coba ekstrak dari response mentah
+                if (empty($videoUrl) && is_array($stream_res)) {
+                    // Cari key yang mengandung 'hls' atau 'url'
+                    foreach ($stream_res as $key => $value) {
+                        if (is_string($value) && strpos($value, '.m3u8') !== false) {
+                            $videoUrl = $value;
+                            break;
+                        }
+                        if (is_string($key) && stripos($key, 'hls') !== false && is_string($value)) {
+                            $videoUrl = $value;
+                            break;
+                        }
+                        if (is_string($key) && stripos($key, 'url') !== false && is_string($value)) {
+                            $videoUrl = $value;
+                            break;
+                        }
+                    }
                 }
             }
 
