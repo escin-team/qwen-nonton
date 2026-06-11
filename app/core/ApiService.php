@@ -201,7 +201,7 @@ class ApiService {
         $isIndexedArray = (count($keys) > 0 && isset($keys[0]) && is_int($keys[0]));
         
         if ($isIndexedArray) {
-            // Ini adalah array langsung (list/trending), bungkus dengan key 'data'
+            // Ini adalah array langsung (list/trending/episodes), bungkus dengan key 'data'
             return array('data' => $response);
         }
         
@@ -216,9 +216,8 @@ class ApiService {
             return array('data' => $response['items']);
         }
         
-        // FLICKREELS EPISODES SPECIAL CASE: Response langsung array episodes tanpa wrapper
-        // Contoh: [{"chapterId":"1108","number":1}, {"chapterId":"1109","number":2}, ...]
-        // Deteksi: jika punya key 'episodes' yang berisi array
+        // FLICKREELS EPISODES SPECIAL CASE: Response object dengan key 'episodes' berisi array
+        // Contoh: {"episodes":[{"chapterId":"1108","number":1}, {...}]}
         if (isset($response['episodes']) && is_array($response['episodes'])) {
             return array('data' => $response['episodes']);
         }
@@ -231,7 +230,7 @@ class ApiService {
             }
         }
         
-        // Jika tidak ada wrapper yang dikenali, kembalikan apa adanya
+        // Jika tidak ada wrapper yang dikenali, kembalikan apa adanya dalam format data
         return array('data' => $response);
     }
     

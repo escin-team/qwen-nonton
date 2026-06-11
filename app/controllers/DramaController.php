@@ -57,14 +57,15 @@ class DramaController extends Controller {
             $episodes = array();
             
             // Normalisasi response episodes - FLICKREELS SPECIAL CASE
-            // FlickReels episodes ada di dalam $detail['episodes'] ATAU dari endpoint terpisah
-            if ($episodes_res) {
-                if (isset($episodes_res['data']) && is_array($episodes_res['data'])) {
-                    $episodes = $episodes_res['data'];
-                } elseif (is_array($episodes_res) && isset($episodes_res[0])) {
-                    $episodes = $episodes_res;
-                } elseif (is_array($episodes_res) && !isset($episodes_res['error'])) {
-                    // FLICKREELS: Response langsung tanpa wrapper
+            // ApiService::normalizeResponse() sudah mengembalikan ['data' => [...]]
+            if ($episodes_res && isset($episodes_res['data']) && is_array($episodes_res['data'])) {
+                $episodes = $episodes_res['data'];
+            } elseif ($episodes_res && is_array($episodes_res) && !isset($episodes_res['error'])) {
+                // Fallback: jika response adalah array langsung (tanpa wrapper 'data')
+                // Cek apakah ini array indexed (list episodes)
+                $keys = array_keys($episodes_res);
+                $isIndexedArray = (count($keys) > 0 && isset($keys[0]) && is_int($keys[0]));
+                if ($isIndexedArray) {
                     $episodes = $episodes_res;
                 }
             }
@@ -81,6 +82,13 @@ class DramaController extends Controller {
                 $episodes_res_fresh = $api->getEpisodes($provider, $id, 300); // Cache 5 menit saja
                 if ($episodes_res_fresh && isset($episodes_res_fresh['data']) && is_array($episodes_res_fresh['data'])) {
                     $episodes = $episodes_res_fresh['data'];
+                } elseif ($episodes_res_fresh && is_array($episodes_res_fresh)) {
+                    // Cek apakah ini array indexed
+                    $keys = array_keys($episodes_res_fresh);
+                    $isIndexedArray = (count($keys) > 0 && isset($keys[0]) && is_int($keys[0]));
+                    if ($isIndexedArray) {
+                        $episodes = $episodes_res_fresh;
+                    }
                 }
             }
 
