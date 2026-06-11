@@ -1,3 +1,4 @@
+```
 # Compiled and build artifacts
 *.pyc
 __pycache__/
@@ -27,55 +28,19 @@ venv/
 .vscode/
 .idea/
 
-# Build directories
-dist/
-build/
-target/
-.gradle/
-
-# Python specific
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# PHP specific
-vendor/
-composer.lock
-
-# Coverage
-.coverage
-coverage/
-htmlcov/
-
-# Cache
-.mypy_cache/
-.pytest_cache/
-.nyc_output/
-coverage/
-
-# OS generated
+# OS
 .DS_Store
 Thumbs.db
-*.swp
-*.swo
 
-# Compressed files
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Distribution / packaging
+dist/
+build/
+*.tar.gz
 *.zip
 *.gz
 *.tar
@@ -94,7 +59,7 @@ Thumbs.db
 *.Z
 *.lz
 *.lzo
-*.tar.gz
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+```

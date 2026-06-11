@@ -1,7 +1,7 @@
 <?php
 /**
  * ==========================================
- * NONTONIN - CONFIGURATION FILE (FINAL)
+ * NONTONIN - CONFIGURATION FILE (FINAL FIX)
  * ==========================================
  * 
  * File konfigurasi utama untuk aplikasi Nontonin
@@ -9,12 +9,16 @@
  * Struktur: FLAT (tanpa folder /public)
  * 
  * Compatible: PHP 5.6 - 8.3
+ * 
+ * PERBAIKAN BUG:
+ * - Bug #2: Helper url() anti double-slash
+ * - Bug #3: Helper e() untuk XSS dan null safety
+ * - Bug #12: SITE_NAME bukan APP_NAME
  */
 
 // ==========================================
 // 1. ERROR REPORTING (DEBUG MODE)
 // ==========================================
-// Aktifkan saat development, matikan (0) saat production
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
@@ -24,71 +28,51 @@ ini_set('error_log', dirname(__DIR__) . '/storage/logs/php_error.log');
 // 2. SESSION MANAGEMENT
 // ==========================================
 if (session_status() == PHP_SESSION_NONE) {
-    // Konfigurasi session yang aman
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
-    ini_set('session.cookie_secure', 0); // Set ke 1 jika pakai HTTPS
-    ini_set('session.gc_maxlifetime', 3600); // 1 jam
-    
+    ini_set('session.cookie_secure', 0);
+    ini_set('session.gc_maxlifetime', 3600);
     session_start();
 }
 
 // ==========================================
 // 3. PATH DEFINITIONS
 // ==========================================
-// BASE_PATH: Root folder proyek (htdocs)
-// dirname(__DIR__) dari /config akan mundur 1 langkah ke root
 define('BASE_PATH', dirname(__DIR__));
-
-// VIEW_PATH: Lokasi folder view
 define('VIEW_PATH', BASE_PATH . '/app/views/');
-
-// CACHE_PATH: Lokasi folder cache API
 define('CACHE_PATH', BASE_PATH . '/storage/cache/');
-
-// LOGS_PATH: Lokasi folder log error
 define('LOGS_PATH', BASE_PATH . '/storage/logs/');
 
 // ==========================================
-// 4. DATABASE CONFIGURATION (ByetHost/AeonFree)
+// 4. DATABASE CONFIGURATION
 // ==========================================
-// PENTING: 
-// - DB_HOST seringkali BUKAN 'localhost' di ByetHost
-// - Cek VistaPanel → MySQL Databases → MySQL Hostname
-// - DB_NAME dan DB_USER biasanya ada prefix b17_
-// Database credentials
 define('DB_HOST', 'sql200.byethost17.com');
 define('DB_NAME', 'b17_42158260_data');
 define('DB_USER', 'b17_42158260');
 define('DB_PASS', 'lukman112');
-define('DB_CHARSET', 'utf8');
+define('DB_CHARSET', 'utf8mb4');
+
 // ==========================================
 // 5. DRAMABOS API CONFIGURATION
 // ==========================================
 define('API_BASE_URL', 'https://prod-api.dramabos.live');
-define('API_TOKEN', 'dbk_live_5f9955d229af1fc9fed1bc037a733ac0a36601bd9b9b8ca6'); // Token Anda
+define('API_TOKEN', 'dbk_live_5f9955d229af1fc9fed1bc037a733ac0a36601bd9b9b8ca6');
 
 // ==========================================
 // 6. BASE URL DEFINITION (ANTI DOUBLE-SLASH)
 // ==========================================
-// Deteksi protocol (http/https)
 $protocol = 'http';
 if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' && $_SERVER['HTTPS'] !== '') {
     $protocol = 'https';
 }
 
-// Deteksi domain/host
 $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
-
-// PENTING: Hapus SEMUA trailing slash dari host
 $host = rtrim($host, '/');
 
-// Define BASE_URL TANPA trailing slash
-// Hasil: https://tontonin.byethost17.com (TANPA / di belakang)
 define('BASE_URL', $protocol . '://' . $host);
 
 // ==========================================
-// 7. AUTO-CREATE FOLDERS (Jika belum ada)
+// 7. AUTO-CREATE FOLDERS
 // ==========================================
 $folders_to_check = array(
     CACHE_PATH,
@@ -108,44 +92,33 @@ foreach ($folders_to_check as $folder) {
 
 /**
  * Helper untuk generate URL yang aman dari double-slash (//)
+ * Bug #2 Fix: Menggunakan rtrim + ltrim + preg_replace
  * 
- * @param string $path Path URL (boleh pakai / di depan atau tidak)
+ * @param string $path Path URL
  * @return string URL lengkap yang bersih
- * 
- * Contoh:
- * url('auth/login')      -> https://domain.com/auth/login
- * url('/auth/login')     -> https://domain.com/auth/login
- * url('')                -> https://domain.com/
- * url()                  -> https://domain.com/
  */
 if (!function_exists('url')) {
     function url($path = '') {
         $base = defined('BASE_URL') ? BASE_URL : '';
-        
-        // Hapus trailing slash dari base (jaga-jaga)
         $base = rtrim($base, '/');
         
-        // Jika path kosong, return base dengan 1 slash
         if ($path === '' || $path === null) {
             return $base . '/';
         }
         
-        // Hapus SEMUA leading slash dari path
         $path = ltrim($path, '/');
-        
-        // Hapus juga slash ganda di tengah path (misal: 'auth//login' -> 'auth/login')
         $path = preg_replace('#/+#', '/', $path);
         
-        // Gabungkan dengan tepat 1 slash
         return $base . '/' . $path;
     }
 }
 
 /**
  * Helper untuk redirect yang aman
+ * Bug #2 Fix: Menggunakan url() untuk mencegah double-slash
  * 
  * @param string $path Path tujuan redirect
- * @param int $code HTTP status code (default: 302)
+ * @param int $code HTTP status code
  */
 if (!function_exists('redirect')) {
     function redirect($path = '', $code = 302) {
@@ -153,7 +126,6 @@ if (!function_exists('redirect')) {
             header('Location: ' . url($path), true, $code);
             exit;
         } else {
-            // Fallback jika header sudah terkirim
             echo '<script>window.location.href="' . url($path) . '";</script>';
             echo '<noscript><meta http-equiv="refresh" content="0;url=' . url($path) . '"></noscript>';
             exit;
@@ -163,12 +135,10 @@ if (!function_exists('redirect')) {
 
 /**
  * Helper untuk output HTML yang aman dari XSS dan crash PHP 8.3
+ * Bug #3 Fix: Wrap dengan isset() check untuk null safety
  * 
  * @param mixed $string String yang akan di-escape
  * @return string String yang sudah di-htmlspecialchars
- * 
- * Contoh:
- * e($drama['title']) -> Aman meskipun $drama['title'] null/undefined
  */
 if (!function_exists('e')) {
     function e($string) {
@@ -181,8 +151,6 @@ if (!function_exists('e')) {
 
 /**
  * Helper untuk mengecek apakah user sudah login
- * 
- * @return bool True jika sudah login, false jika belum
  */
 if (!function_exists('is_logged_in')) {
     function is_logged_in() {
@@ -192,8 +160,6 @@ if (!function_exists('is_logged_in')) {
 
 /**
  * Helper untuk mendapatkan user ID yang sedang login
- * 
- * @return int|null User ID atau null jika belum login
  */
 if (!function_exists('get_user_id')) {
     function get_user_id() {
@@ -203,8 +169,6 @@ if (!function_exists('get_user_id')) {
 
 /**
  * Helper untuk mendapatkan username yang sedang login
- * 
- * @return string|null Username atau null jika belum login
  */
 if (!function_exists('get_username')) {
     function get_username() {
@@ -213,10 +177,7 @@ if (!function_exists('get_username')) {
 }
 
 /**
- * Helper untuk flash message (pesan sekali pakai)
- * 
- * @param string $key Key pesan (success, error, warning, info)
- * @param string $message Pesan yang akan ditampilkan
+ * Helper untuk flash message
  */
 if (!function_exists('set_flash')) {
     function set_flash($key, $message) {
@@ -226,9 +187,6 @@ if (!function_exists('set_flash')) {
 
 /**
  * Helper untuk mendapatkan flash message
- * 
- * @param string $key Key pesan
- * @return string|null Pesan atau null jika tidak ada
  */
 if (!function_exists('get_flash')) {
     function get_flash($key) {
@@ -244,8 +202,6 @@ if (!function_exists('get_flash')) {
 
 /**
  * Helper untuk generate CSRF token
- * 
- * @return string CSRF token
  */
 if (!function_exists('csrf_token')) {
     function csrf_token() {
@@ -258,9 +214,6 @@ if (!function_exists('csrf_token')) {
 
 /**
  * Helper untuk validasi CSRF token
- * 
- * @param string $token Token yang akan divalidasi
- * @return bool True jika valid, false jika tidak
  */
 if (!function_exists('verify_csrf')) {
     function verify_csrf($token) {
@@ -269,10 +222,7 @@ if (!function_exists('verify_csrf')) {
 }
 
 /**
- * Helper untuk debug (hanya muncul saat development)
- * 
- * @param mixed $data Data yang akan di-debug
- * @param bool $die Apakah harus exit setelah debug
+ * Helper untuk debug
  */
 if (!function_exists('dd')) {
     function dd($data, $die = true) {
@@ -291,40 +241,25 @@ if (!function_exists('dd')) {
 date_default_timezone_set('Asia/Jakarta');
 
 // ==========================================
-// 10. CONSTANT TAMBAHAN (Opsional)
+// 10. CONSTANTS (SITE_NAME bukan APP_NAME)
+// Bug #12 Fix
 // ==========================================
 define('SITE_NAME', 'Nontonin');
 define('SITE_DESCRIPTION', 'Platform Streaming Drama China & Short Drama');
 define('ITEMS_PER_PAGE', 30);
-define('CACHE_DURATION_FEED', 21600); // 6 jam
-define('CACHE_DURATION_DETAIL', 43200); // 12 jam
-define('CACHE_DURATION_EPISODES', 21600); // 6 jam
-define('CACHE_DURATION_STREAM', 900); // 15 menit
+define('CACHE_DURATION_FEED', 21600);
+define('CACHE_DURATION_DETAIL', 43200);
+define('CACHE_DURATION_EPISODES', 21600);
+define('CACHE_DURATION_STREAM', 900);
 
 // ==========================================
-// 11. AUTOLOAD CORE CLASSES (Opsional)
+// 11. MAINTENANCE MODE
 // ==========================================
-// Jika Anda ingin menggunakan autoloader, uncomment baris di bawah
-// spl_autoload_register(function ($class) {
-//     $file = BASE_PATH . '/app/core/' . $class . '.php';
-//     if (file_exists($file)) {
-//         require_once $file;
-//     }
-// });
-
-// ==========================================
-// 12. MAINTENANCE MODE (Opsional)
-// ==========================================
-// Set ke true jika ingin menampilkan halaman maintenance
 define('MAINTENANCE_MODE', false);
 
 if (MAINTENANCE_MODE && !isset($_GET['admin'])) {
     http_response_code(503);
     echo '<h1>🚧 Website Sedang Dalam Perbaikan</h1>';
-    echo '<p>Kami akan segera kembali. Terima kasih atas kesabarannya.</p>';
+    echo '<p>Kami akan segera kembali.</p>';
     exit;
 }
-
-// ==========================================
-// END OF CONFIG FILE
-// ==========================================

@@ -29,10 +29,18 @@ class DramaController extends Controller {
      * @param string $dramaId Drama ID from API
      */
     public function detail($provider, $dramaId) {
-        // Validate provider against supported list
-        $validProviders = array('dramabox', 'shortmax', 'reelshort', 'starshort', 'dramabite', 'freereels', 'fundrama', 'microdrama', 'vigloo', 'bilitv');
+        // Validate provider against supported list (30 providers termasuk flickreels)
+        // Bug #10 Fix: Tambahkan flickreels dan provider lainnya
+        $validProviders = array(
+            'dramabox', 'shortmax', 'reelshort', 'starshort', 'dramabite', 
+            'goodshort', 'reelbuzz', 'freereels', 'vigloo', 'dramawave',
+            'microdrama', 'bilitv', 'netshort', 'melolo', 'velolo',
+            'stardusttv', 'serialplus', 'dotdrama', 'rapidtv', 'shortswave',
+            'dramanova', 'cubetv', 'flareflow', 'moboreels', 'happyshort',
+            'reelife', 'pinedrama', 'flextv', 'reelala', 'flickreels', 'idrama'
+        );
         if (!in_array($provider, $validProviders)) {
-            redirect('home');
+            redirect('/');
         }
         
         $dramaDetails = array();
@@ -89,7 +97,7 @@ class DramaController extends Controller {
             'drama_id' => $dramaId,
             'episodes' => $episodes,
             'error' => $error,
-            'page_title' => (isset($dramaDetails['title']) ? e($dramaDetails['title']) : 'Drama Detail') . ' - ' . APP_NAME
+            'page_title' => (isset($dramaDetails['title']) ? e($dramaDetails['title']) : 'Drama Detail') . ' - ' . SITE_NAME
         ));
     }
     
@@ -101,10 +109,18 @@ class DramaController extends Controller {
      * @param int $episodeNum Episode number (default 1)
      */
     public function watch($provider, $dramaId, $episodeNum = 1) {
-        // Validate provider
-        $validProviders = array('dramabox', 'shortmax', 'reelshort', 'starshort', 'dramabite', 'freereels', 'fundrama', 'microdrama', 'vigloo', 'bilitv', 'flickreels', 'idrama');
+        // Validate provider (30 providers termasuk flickreels dan idrama)
+        // Bug #10 Fix: Tambahkan flickreels dan idrama
+        $validProviders = array(
+            'dramabox', 'shortmax', 'reelshort', 'starshort', 'dramabite', 
+            'goodshort', 'reelbuzz', 'freereels', 'vigloo', 'dramawave',
+            'microdrama', 'bilitv', 'netshort', 'melolo', 'velolo',
+            'stardusttv', 'serialplus', 'dotdrama', 'rapidtv', 'shortswave',
+            'dramanova', 'cubetv', 'flareflow', 'moboreels', 'happyshort',
+            'reelife', 'pinedrama', 'flextv', 'reelala', 'flickreels', 'idrama'
+        );
         if (!in_array($provider, $validProviders)) {
-            redirect('home');
+            redirect('/');
         }
         
         $streamUrl = '';
@@ -166,7 +182,7 @@ class DramaController extends Controller {
             'provider' => $provider,
             'episodeInfo' => $episodeInfo,
             'error' => $error,
-            'page_title' => 'Watch Episode ' . e($episodeNum) . ' - ' . APP_NAME
+            'page_title' => 'Watch Episode ' . e($episodeNum) . ' - ' . SITE_NAME
         ));
     }
 }
