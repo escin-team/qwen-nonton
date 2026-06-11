@@ -73,7 +73,17 @@
                 <hr class="bg-secondary">
                 
                 <h4 class="mb-3">Daftar Episode</h4>
-                <?php if (empty($episodes) || !is_array($episodes)): ?>
+                <?php 
+                // Debug: Cek isi episodes
+                if (empty($episodes)) {
+                    // Coba ambil dari detail['episodes'] jika ada
+                    if (isset($detail['episodes']) && is_array($detail['episodes'])) {
+                        $episodes = $detail['episodes'];
+                    }
+                }
+                
+                if (empty($episodes) || !is_array($episodes)): 
+                ?>
                     <div class="alert alert-warning">
                         Daftar episode belum tersedia atau sedang dalam proses pembaruan.
                     </div>

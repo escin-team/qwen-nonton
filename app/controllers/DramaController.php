@@ -33,57 +33,52 @@ class DramaController extends Controller {
         try {
             $api = new ApiService();
             
-            // Ambil Detail
+            // Ambil Detail - Response sudah ternormalisasi: array('data' => [...])
             $detail_res = $api->getDramaDetail($provider, $id);
             $detail = array();
-            
-            // Normalisasi response detail - FLICKREELS SPECIAL CASE
-            // FlickReels detail response TIDAK pakai wrapper 'data', langsung object
-            // Contoh: {"cover":"...","episodes":[...],"id":"26","title":"..."}
-            if ($detail_res) {
-                // Cek jika response punya wrapper 'data'
-                if (isset($detail_res['data']) && is_array($detail_res['data'])) {
+
+            // Ekstrak data dari response ternormalisasi
+            if ($detail_res && isset($detail_res['data'])) {
+                // Jika 'data' adalah array indexed (list), ambil item pertama
+                if (isset($detail_res['data'][0])) {
+                    $detail = $detail_res['data'][0];
+                } else {
+                    // Jika 'data' adalah object detail langsung
                     $detail = $detail_res['data'];
-                } elseif (is_array($detail_res) && isset($detail_res[0])) {
-                    $detail = $detail_res[0];
-                } elseif (is_array($detail_res) && !isset($detail_res['error'])) {
-                    // FLICKREELS: Response langsung tanpa wrapper, pakai sebagai detail
-                    $detail = $detail_res;
                 }
+            } elseif ($detail_res && is_array($detail_res) && !isset($detail_res['error'])) {
+                // Fallback: response langsung tanpa wrapper
+                $detail = $detail_res;
             }
 
-            // Ambil Episodes
+            // Ambil Episodes - Response sudah ternormalisasi: array('data' => [...])
             $episodes_res = $api->getEpisodes($provider, $id);
             $episodes = array();
-            
-            // Normalisasi response episodes - FLICKREELS SPECIAL CASE
-            // ApiService::normalizeResponse() sudah mengembalikan ['data' => [...]]
+
+            // Ekstrak episodes dari response ternormalisasi
             if ($episodes_res && isset($episodes_res['data']) && is_array($episodes_res['data'])) {
                 $episodes = $episodes_res['data'];
             } elseif ($episodes_res && is_array($episodes_res) && !isset($episodes_res['error'])) {
-                // Fallback: jika response adalah array langsung (tanpa wrapper 'data')
-                // Cek apakah ini array indexed (list episodes)
+                // Fallback: jika response adalah array langsung
                 $keys = array_keys($episodes_res);
                 $isIndexedArray = (count($keys) > 0 && isset($keys[0]) && is_int($keys[0]));
                 if ($isIndexedArray) {
                     $episodes = $episodes_res;
                 }
             }
-            
+
             // FALLBACK 1: Jika episodes masih kosong tapi detail punya 'episodes' array
-            // FlickReels kadang embed episodes di dalam detail response
+            // Beberapa provider embed episodes di dalam detail response
             if (empty($episodes) && isset($detail['episodes']) && is_array($detail['episodes'])) {
                 $episodes = $detail['episodes'];
             }
-            
-            // FALLBACK 2: Jika episodes masih kosong, coba ambil dari endpoint terpisah dengan cache lebih singkat
-            // Ini untuk memastikan episode selalu muncul meski cache detail masih lama
+
+            // FALLBACK 2: Jika episodes masih kosong, coba ambil dari endpoint dengan cache lebih singkat
             if (empty($episodes)) {
-                $episodes_res_fresh = $api->getEpisodes($provider, $id, 300); // Cache 5 menit saja
+                $episodes_res_fresh = $api->getEpisodes($provider, $id, 300);
                 if ($episodes_res_fresh && isset($episodes_res_fresh['data']) && is_array($episodes_res_fresh['data'])) {
                     $episodes = $episodes_res_fresh['data'];
                 } elseif ($episodes_res_fresh && is_array($episodes_res_fresh)) {
-                    // Cek apakah ini array indexed
                     $keys = array_keys($episodes_res_fresh);
                     $isIndexedArray = (count($keys) > 0 && isset($keys[0]) && is_int($keys[0]));
                     if ($isIndexedArray) {
@@ -97,6 +92,13 @@ class DramaController extends Controller {
                 $_SESSION['flash_error'] = 'Drama tidak ditemukan di provider ' . strtoupper($provider);
                 redirect('/');
                 return;
+            }
+
+            // LAST RESORT: Jika episodes masih kosong, coba ekstrak dari detail response
+            if (empty($episodes) && isset($detail['episodes'])) {
+                if (is_array($detail['episodes'])) {
+                    $episodes = $detail['episodes'];
+                }
             }
 
             $site_name = defined('SITE_NAME') ? SITE_NAME : 'Nontonin';
