@@ -142,9 +142,17 @@ if (!function_exists('redirect')) {
  */
 if (!function_exists('e')) {
     function e($string) {
+        // FIX: Jika data adalah Array atau Object, kembalikan string kosong
+        if (is_array($string) || is_object($string)) {
+            return ''; 
+        }
+        
+        // FIX: Jika null atau false, kembalikan string kosong
         if ($string === null || $string === false) {
             return '';
         }
+        
+        // Escape string biasa
         return htmlspecialchars((string)$string, ENT_QUOTES, 'UTF-8');
     }
 }
