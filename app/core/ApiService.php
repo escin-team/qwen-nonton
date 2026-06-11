@@ -222,8 +222,14 @@ class ApiService {
             return array('data' => $response['episodes']);
         }
         
-        // Cek wrapper alternatif: 'list', 'result', 'movies', 'videos', 'chapters'
-        $wrapperKeys = array('list', 'result', 'movies', 'videos', 'chapters');
+        // DRAMABOX/OTHER SPECIAL CASE: Response object dengan key 'list' berisi array episodes
+        // Contoh: {"code":0,"msg":"success","list":[{"episodeId":"123","number":1}, {...}]}
+        if (isset($response['list']) && is_array($response['list'])) {
+            return array('data' => $response['list']);
+        }
+        
+        // Cek wrapper alternatif: 'result', 'movies', 'videos', 'chapters', 'item'
+        $wrapperKeys = array('result', 'movies', 'videos', 'chapters', 'item');
         foreach ($wrapperKeys as $key) {
             if (isset($response[$key]) && is_array($response[$key])) {
                 return array('data' => $response[$key]);
