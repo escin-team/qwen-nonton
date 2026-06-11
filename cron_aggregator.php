@@ -36,8 +36,14 @@ if (isset($_GET['key'])) {
     }
 }
 
-// Load konfigurasi
-require_once __DIR__ . '/config/config.php';
+// 3. Load konfigurasi - FIX: Path yang benar
+if (file_exists(__DIR__ . '/config/config.php')) {
+    require_once __DIR__ . '/config/config.php';
+} elseif (file_exists(__DIR__ . '/app/config/config.php')) {
+    require_once __DIR__ . '/app/config/config.php';
+} else {
+    die('❌ ERROR: File config.php tidak ditemukan!');
+}
 
 // Set waktu eksekusi maksimal (penting untuk agregasi banyak provider)
 ini_set('max_execution_time', 300); // 5 menit
@@ -632,16 +638,25 @@ try {
         // Update summary card dengan ukuran cache
         echo "<script>updateCacheSize('" . $fileSize . " KB');</script>";
         
-        // Tampilkan tombol link ke halaman home
-        $homeUrl = url('home');
-        echo "<script>document.getElementById('action-buttons').innerHTML = '<a href=\"" . e($homeUrl) . "\" class=\"btn-home\">🏠 Buka Halaman Home</a>';</script>";
+        // Tampilkan tombol link ke halaman home (fallback jika fungsi url() tidak ada)
+        if (function_exists('url')) {
+            $homeUrl = url('home');
+        } else {
+            $homeUrl = '/';
+        }
+        if (function_exists('e')) {
+            $escapedUrl = e($homeUrl);
+        } else {
+            $escapedUrl = htmlspecialchars($homeUrl, ENT_QUOTES, 'UTF-8');
+        }
+        echo "<script>document.getElementById('action-buttons').innerHTML = '<a href=\"" . $escapedUrl . "\" class=\"btn-home\">🏠 Buka Halaman Home</a>';</script>";
     } else {
         echo "<script>addLog('❌ Gagal menyimpan file cache (atomic write failed)', 'error');</script>";
         echo "<script>document.getElementById('status').innerHTML = '<div class=\"status-box status-error\"><strong>❌ Gagal Menyimpan Cache</strong><br>Periksa permission direktori storage/cache/ (harus 777)</div>';</script>";
     }
 } catch (Exception $e) {
-    echo "<script>addLog('❌ Error saat menyimpan: " . e($e->getMessage()) . "', 'error');</script>";
-    echo "<script>document.getElementById('status').innerHTML = '<div class=\"status-box status-error\"><strong>❌ Error: " . e($e->getMessage()) . "</strong></div>';</script>";
+    echo "<script>addLog('❌ Error saat menyimpan: " . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . "', 'error');</script>";
+    echo "<script>document.getElementById('status').innerHTML = '<div class=\"status-box status-error\"><strong>❌ Error: " . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . "</strong></div>';</script>";
 }
 
 // Tampilkan ringkasan lengkap
