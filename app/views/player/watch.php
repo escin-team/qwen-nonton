@@ -46,10 +46,72 @@
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/dplayer@latest/dist/DPlayer.min.js"></script>
 <script>
+// Fungsi deteksi kualitas jaringan menggunakan Network Information API
+function getNetworkQuality() {
+    if ('connection' in navigator) {
+        var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (conn) {
+            // downlink dalam Mbps, rtt dalam ms
+            var downlink = conn.downlink || 0;
+            var rtt = conn.rtt || 0;
+            var effectiveType = conn.effectiveType || '';
+            
+            // Klasifikasi kualitas jaringan
+            if (downlink >= 5 && rtt <= 100) {
+                return 'good'; // HD Quality
+            } else if (downlink >= 2 && rtt <= 200) {
+                return 'medium'; // SD Quality
+            } else {
+                return 'poor'; // Low Quality
+            }
+        }
+    }
+    // Default: asumsikan jaringan bagus jika tidak terdeteksi
+    return 'good';
+}
+
+// Fungsi adaptasi kualitas HLS berdasarkan jaringan
+function adaptHLSQuality(hls, networkQuality) {
+    if (!hls.levels || hls.levels.length === 0) {
+        return;
+    }
+    
+    var levels = hls.levels;
+    var selectedLevel = -1;
+    
+    if (networkQuality === 'good') {
+        // Pilih kualitas tertinggi (HD)
+        selectedLevel = hls.autoLevelCapping = -1; // Auto select highest
+        console.log('[Network] Jaringan BAGUS - Menggunakan HD Quality');
+    } else if (networkQuality === 'medium') {
+        // Pilih kualitas medium (SD)
+        for (var i = 0; i < levels.length; i++) {
+            if (levels[i].bitrate < 2000000) { // < 2 Mbps
+                selectedLevel = i;
+                break;
+            }
+        }
+        if (selectedLevel === -1) {
+            selectedLevel = Math.floor(levels.length / 2);
+        }
+        hls.autoLevelCapping = selectedLevel;
+        console.log('[Network] Jaringan SEDANG - Menggunakan SD Quality (Level ' + selectedLevel + ')');
+    } else {
+        // Pilih kualitas terendah (Low)
+        selectedLevel = 0;
+        hls.autoLevelCapping = 0;
+        console.log('[Network] Jaringan BURUK - Menggunakan Low Quality (Level 0)');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const videoUrl = '<?php echo e($videoUrl); ?>';
     
     if (videoUrl) {
+        // Deteksi kualitas jaringan sebelum load video
+        var networkQuality = getNetworkQuality();
+        console.log('[Network] Kualitas jaringan terdeteksi: ' + networkQuality);
+        
         const dp = new DPlayer({
             container: document.getElementById('dplayer'),
             theme: '#bb86fc',
@@ -60,23 +122,71 @@ document.addEventListener('DOMContentLoaded', function() {
                 customType: {
                     hls: function (video, player) {
                         if (Hls.isSupported()) {
-                            const hls = new Hls();
+                            const hls = new Hls({
+                                enableWorker: true,
+                                lowLatencyMode: false,
+                                backBufferLength: 90
+                            });
+                            
                             hls.loadSource(video.src);
                             hls.attachMedia(video);
+                            
+                            // Adaptasi kualitas berdasarkan jaringan
+                            adaptHLSQuality(hls, networkQuality);
+                            
+                            // Monitor perubahan jaringan secara real-time
+                            if ('connection' in navigator) {
+                                var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                                if (conn && conn.addEventListener) {
+                                    conn.addEventListener('change', function() {
+                                        var newQuality = getNetworkQuality();
+                                        console.log('[Network] Perubahan jaringan terdeteksi: ' + newQuality);
+                                        adaptHLSQuality(hls, newQuality);
+                                    });
+                                }
+                            }
+                            
                             hls.on(Hls.Events.ERROR, function (event, data) {
                                 console.error('HLS Error:', data);
                                 if (data.fatal) {
-                                    // Bisa tambahkan UI error di sini jika HLS gagal total
+                                    // Auto-recover dari fatal error
+                                    switch (data.type) {
+                                        case Hls.ErrorTypes.NETWORK_ERROR:
+                                            console.log('[HLS] Network error, attempting recovery...');
+                                            hls.startLoad();
+                                            break;
+                                        case Hls.ErrorTypes.MEDIA_ERROR:
+                                            console.log('[HLS] Media error, attempting recovery...');
+                                            hls.recoverMediaError();
+                                            break;
+                                        default:
+                                            console.log('[HLS] Unrecoverable error, destroying player...');
+                                            hls.destroy();
+                                            break;
+                                    }
                                 }
                             });
+                            
+                            // Log level yang tersedia
+                            hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+                                console.log('[HLS] Manifest parsed. Available levels:', data.levels.length);
+                                for (var i = 0; i < data.levels.length; i++) {
+                                    console.log('[HLS] Level ' + i + ': ' + (data.levels[i].bitrate / 1000).toFixed(0) + ' kbps');
+                                }
+                            });
+                            
                         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                             // Fallback native untuk Safari/iOS
                             video.src = video.src;
+                            console.log('[HLS] Using native HLS playback (Safari/iOS)');
                         }
                     }
                 }
             }
         });
+        
+        // Tampilkan info kualitas jaringan di console
+        console.log('[Network] Network-based quality adaptation enabled');
     }
 });
 </script>
