@@ -47,8 +47,19 @@
                     <?php if (isset($detail['rating']) && !empty($detail['rating'])): ?>
                         <span>⭐ <?php echo e($detail['rating']); ?></span>
                     <?php endif; ?>
-                    <?php if (isset($detail['episodes']) && !empty($detail['episodes'])): ?>
-                        <span>🎬 <?php echo e($detail['episodes']); ?> Episodes</span>
+                    <?php 
+                        // FIX: Handle jika 'episodes' dikembalikan sebagai Array, bukan Integer
+                        $ep_count = 0;
+                        if (isset($detail['episodes'])) {
+                            if (is_array($detail['episodes'])) {
+                                $ep_count = count($detail['episodes']);
+                            } elseif (is_numeric($detail['episodes'])) {
+                                $ep_count = (int)$detail['episodes'];
+                            }
+                        }
+                    ?>
+                    <?php if ($ep_count > 0): ?>
+                        <span>🎬 <?php echo $ep_count; ?> Episodes</span>
                     <?php endif; ?>
                 </div>
 
@@ -62,23 +73,52 @@
                 <hr class="bg-secondary">
                 
                 <h4 class="mb-3">Daftar Episode</h4>
-                <?php if (empty($episodes)): ?>
+                <?php if (empty($episodes) || !is_array($episodes)): ?>
                     <div class="alert alert-warning">
                         Daftar episode belum tersedia atau sedang dalam proses pembaruan.
                     </div>
                 <?php else: ?>
                     <div class="d-flex flex-wrap">
-                        <?php foreach ($episodes as $index => $ep): ?>
-                            <?php 
-                                // Coba ambil ID episode, fallback ke index+1 jika tidak ada
-                                $ep_id = isset($ep['id']) ? $ep['id'] : ($index + 1);
-                                $ep_num = isset($ep['number']) ? $ep['number'] : ($index + 1);
-                                $ep_title = isset($ep['title']) ? ' - ' . $ep['title'] : '';
-                            ?>
-                            <a href="<?php echo url('watch/' . e($provider) . '/' . e($drama_id) . '/' . e($ep_id)); ?>" 
-                               class="btn episode-btn">
-                                Ep <?php echo e($ep_num); ?>
-                            </a>
+                        <?php 
+                        $ep_counter = 1; 
+                        foreach ($episodes as $index => $ep): 
+                            
+                            // FIX: Jika $ep bukan array (misal hanya string ID), bungkus jadi array
+                            if (!is_array($ep)) {
+                                $ep = array('id' => $ep);
+                            }
+
+                            // 1. Ambil ID Episode dengan aman
+                            $ep_id = '';
+                            if (isset($ep['id']) && !is_array($ep['id'])) {
+                                $ep_id = $ep['id'];
+                            } elseif (isset($ep['episode_id'])) {
+                                $ep_id = $ep['episode_id'];
+                            } elseif (isset($ep['ep'])) {
+                                $ep_id = $ep['ep'];
+                            }
+                            
+                            // Fallback ID: Gunakan counter jika index berupa string (mencegah error string + int)
+                            if (empty($ep_id)) {
+                                $ep_id = is_numeric($index) ? $index : $ep_counter;
+                            }
+
+                            // 2. Ambil Nomor Episode dengan aman
+                            $ep_num = $ep_counter;
+                            if (isset($ep['number']) && is_numeric($ep['number'])) {
+                                $ep_num = (int)$ep['number'];
+                            } elseif (isset($ep['ep']) && is_numeric($ep['ep'])) {
+                                $ep_num = (int)$ep['ep'];
+                            } elseif (is_numeric($index)) {
+                                $ep_num = (int)$index + 1;
+                            }
+                            
+                            $ep_counter++;
+                        ?>
+                        <a href="<?php echo url('watch/' . e($provider) . '/' . e($drama_id) . '/' . e($ep_id)); ?>" 
+                           class="btn episode-btn">
+                            Ep <?php echo e($ep_num); ?>
+                        </a>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
