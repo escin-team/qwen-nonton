@@ -179,20 +179,24 @@ class ApiService {
      * Normalize response dari berbagai format ke format konsisten
      * Response bisa berupa array langsung ATAU object dengan wrapper 'data'
      * @param mixed $response Raw response dari API
+     * @param string $type Type of response: 'list' untuk episodes/trending, 'detail' untuk detail drama
      * @return array Format konsisten: array('data' => [...])
      */
-    private function normalizeResponse($response) {
+    private function normalizeResponse($response, $type = 'list') {
         // Jika response kosong atau bukan array, kembalikan format standar
         if (empty($response) || !is_array($response)) {
             return array('data' => array());
         }
         
-        // FLICKREELS DETAIL SPECIAL CASE: Response langsung object tanpa wrapper
-        // Contoh: {"cover":"...","episodes":[...],"id":"26","title":"Back to the 80s"}
+        // FIX BUG #2: FLICKREELS DETAIL SPECIAL CASE - HANYA untuk type='detail'
+        // Response langsung object tanpa wrapper: {"cover":"...","episodes":[...],"id":"26","title":"Back to the 80s"}
         // Deteksi: jika punya key 'title' atau 'id' atau 'cover' (ciri-ciri object detail)
-        if (isset($response['title']) || isset($response['id']) || isset($response['cover'])) {
-            // Ini adalah object detail langsung, bungkus dengan key 'data'
-            return array('data' => $response);
+        // PENTING: Check ini TIDAK boleh dijalankan untuk episodes/list response!
+        if ($type === 'detail') {
+            if (isset($response['title']) || isset($response['id']) || isset($response['cover'])) {
+                // Ini adalah object detail langsung, bungkus dengan key 'data'
+                return array('data' => $response);
+            }
         }
         
         // Cek apakah response adalah array langsung (tanpa wrapper)
@@ -388,11 +392,15 @@ class ApiService {
     public function getDramaDetail($provider, $dramaId, $cacheTime = 21600) {
         $providerLower = strtolower($provider);
         $encodedId = urlencode($dramaId);
-        
+
+        // FIX BUG #5: Special case untuk idrama - WAJIB pakai ?lang=id
+        if ($providerLower === 'idrama') {
+            $endpoint = '/idrama/drama/' . $encodedId . '?lang=id';
+        }
         // Cek mapping endpoint detail per provider
-        if (isset($this->detailMap[$providerLower])) {
+        elseif (isset($this->detailMap[$providerLower])) {
             $endpointPattern = $this->detailMap[$providerLower];
-            
+
             // Khusus flickreels yang pakai query parameter ?id=
             if ($providerLower === 'flickreels') {
                 $endpoint = $endpointPattern . $encodedId;
@@ -403,14 +411,15 @@ class ApiService {
             // Fallback ke pattern default
             $endpoint = '/' . $providerLower . '/api/v1/detail/' . $encodedId;
         }
-        
+
         $rawResponse = $this->makeRequest($this->baseUrl . $endpoint, $cacheTime);
-        
+
         if ($rawResponse === null) {
             return null;
         }
-        
-        return $this->normalizeResponse($rawResponse);
+
+        // FIX BUG #2: Pass 'detail' type untuk normalizeResponse agar early-return hanya untuk detail
+        return $this->normalizeResponse($rawResponse, 'detail');
     }
     
     /**
@@ -424,11 +433,15 @@ class ApiService {
     public function getEpisodes($provider, $dramaId, $cacheTime = 21600) {
         $providerLower = strtolower($provider);
         $encodedId = urlencode($dramaId);
-        
+
+        // FIX BUG #5: Special case untuk idrama - WAJIB pakai ?lang=id
+        if ($providerLower === 'idrama') {
+            $endpoint = '/idrama/episodes/' . $encodedId . '?lang=id';
+        }
         // Cek mapping endpoint episodes per provider
-        if (isset($this->episodesMap[$providerLower])) {
+        elseif (isset($this->episodesMap[$providerLower])) {
             $endpointPattern = $this->episodesMap[$providerLower];
-            
+
             // Khusus flickreels yang pakai query parameter ?id=
             if ($providerLower === 'flickreels') {
                 $endpoint = $endpointPattern . $encodedId;
@@ -439,13 +452,14 @@ class ApiService {
             // Fallback ke pattern default
             $endpoint = '/' . $providerLower . '/api/v1/episodes/' . $encodedId;
         }
-        
+
         $rawResponse = $this->makeRequest($this->baseUrl . $endpoint, $cacheTime);
-        
+
         if ($rawResponse === null) {
             return null;
         }
-        
+
+        // Default type='list' sudah otomatis untuk episodes
         return $this->normalizeResponse($rawResponse);
     }
     
