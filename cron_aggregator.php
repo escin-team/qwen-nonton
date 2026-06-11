@@ -177,6 +177,25 @@ function atomicWrite($filename, $content) {
     return false;
 }
 
+/**
+ * Custom comparison function untuk usort (PHP 5.6 compatible)
+ * Sort by priority (ShortMax dan FlickReels first, then others)
+ * 
+ * @param array $a First item to compare
+ * @param array $b Second item to compare
+ * @return int Comparison result
+ */
+function compareByPriority($a, $b) {
+    $priorityOrder = array('shortmax', 'flickreels', 'dramabox', 'reelshort', 'starshort', 'dramabite', 'goodshort', 'reelbuzz');
+    $providerA = isset($a['source_provider']) ? $a['source_provider'] : 'zzz';
+    $providerB = isset($b['source_provider']) ? $b['source_provider'] : 'zzz';
+    $priorityA = array_search($providerA, $priorityOrder);
+    $priorityB = array_search($providerB, $priorityOrder);
+    if ($priorityA === false) $priorityA = 999;
+    if ($priorityB === false) $priorityB = 999;
+    return $priorityA - $priorityB;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -571,20 +590,6 @@ foreach ($globalFeed as $item) {
 $globalFeed = $uniqueFeed;
 
 // Sort by priority (ShortMax dan FlickReels first, then others)
-$priorityOrder = array('shortmax', 'flickreels', 'dramabox', 'reelshort', 'starshort', 'dramabite', 'goodshort', 'reelbuzz');
-
-// Custom comparison function untuk usort (PHP 5.6 compatible)
-function compareByPriority($a, $b) {
-    global $priorityOrder;
-    $providerA = isset($a['source_provider']) ? $a['source_provider'] : 'zzz';
-    $providerB = isset($b['source_provider']) ? $b['source_provider'] : 'zzz';
-    $priorityA = array_search($providerA, $priorityOrder);
-    $priorityB = array_search($providerB, $priorityOrder);
-    if ($priorityA === false) $priorityA = 999;
-    if ($priorityB === false) $priorityB = 999;
-    return $priorityA - $priorityB;
-}
-
 usort($globalFeed, 'compareByPriority');
 
 // Save aggregated data to global_feed.json ATOMICALLY
