@@ -81,7 +81,7 @@ class DramaController extends Controller {
             echo '</head><body><div class="error-box">';
             echo '<h1><i class="fas fa-exclamation-triangle"></i> Drama Not Found</h1>';
             echo '<p>The drama you are looking for does not exist or could not be loaded.</p>';
-            echo '<a href="' . url('home') . '" class="btn btn-primary">Go Home</a>';
+            echo '<a href="' . url('/') . '" class="btn btn-primary">Go Home</a>';
             echo '</div></body></html>';
             return;
         }
