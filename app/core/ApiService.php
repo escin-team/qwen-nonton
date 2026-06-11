@@ -187,13 +187,21 @@ class ApiService {
             return array('data' => array());
         }
         
+        // FLICKREELS DETAIL SPECIAL CASE: Response langsung object tanpa wrapper
+        // Contoh: {"cover":"...","episodes":[...],"id":"26","title":"Back to the 80s"}
+        // Deteksi: jika punya key 'title' atau 'id' atau 'cover' (ciri-ciri object detail)
+        if (isset($response['title']) || isset($response['id']) || isset($response['cover'])) {
+            // Ini adalah object detail langsung, bungkus dengan key 'data'
+            return array('data' => $response);
+        }
+        
         // Cek apakah response adalah array langsung (tanpa wrapper)
         // Ciri-ciri: index pertama adalah integer (0, 1, 2, ...)
         $keys = array_keys($response);
         $isIndexedArray = (count($keys) > 0 && isset($keys[0]) && is_int($keys[0]));
         
         if ($isIndexedArray) {
-            // Ini adalah array langsung, bungkus dengan key 'data'
+            // Ini adalah array langsung (list/trending), bungkus dengan key 'data'
             return array('data' => $response);
         }
         
@@ -202,7 +210,7 @@ class ApiService {
             return array('data' => $response['data']);
         }
         
-        // FLICKREELS SPECIAL CASE: Response pakai wrapper 'items'
+        // FLICKREELS TRENDING SPECIAL CASE: Response pakai wrapper 'items'
         // Contoh: {"hasMore":true,"items":[{...},{...}]}
         if (isset($response['items']) && is_array($response['items'])) {
             return array('data' => $response['items']);
