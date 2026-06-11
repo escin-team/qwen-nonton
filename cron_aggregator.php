@@ -57,59 +57,61 @@ $globalFeedPath = __DIR__ . '/storage/cache/global_feed.json';
  * @param string $url Full URL untuk request
  * @return array|null JSON decoded response atau null pada failure
  */
-function fetchFromApi($url) {
-    // Inisialisasi cURL
-    $ch = curl_init();
-    
-    // Opsi cURL - CRITICAL untuk ByetHost/AeonFree
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-    
-    // BYPASS SSL VERIFICATION - Diperlukan untuk ByetHost/AeonFree
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    
-    // Set headers dengan Bearer Token Authentication
-    $headers = array(
-        'Authorization: Bearer ' . API_TOKEN,
-        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept: application/json, text/plain, */*',
-        'Accept-Language: en-US,en;q=0.9',
-        'Content-Type: application/json'
-    );
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    
-    // Eksekusi request
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    $curlErrno = curl_errno($ch);
-    curl_close($ch);
-    
-    // Handle cURL errors
-    if ($curlErrno != 0 || !$response) {
-        error_log('API cURL Error [' . $curlErrno . ']: ' . $curlError . ' - URL: ' . $url);
-        return null;
+if (!function_exists('fetchFromApi')) {
+    function fetchFromApi($url) {
+        // Inisialisasi cURL
+        $ch = curl_init();
+        
+        // Opsi cURL - CRITICAL untuk ByetHost/AeonFree
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        
+        // BYPASS SSL VERIFICATION - Diperlukan untuk ByetHost/AeonFree
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        
+        // Set headers dengan Bearer Token Authentication
+        $headers = array(
+            'Authorization: Bearer ' . API_TOKEN,
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept: application/json, text/plain, */*',
+            'Accept-Language: en-US,en;q=0.9',
+            'Content-Type: application/json'
+        );
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        
+        // Eksekusi request
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        $curlErrno = curl_errno($ch);
+        curl_close($ch);
+        
+        // Handle cURL errors
+        if ($curlErrno != 0 || !$response) {
+            error_log('API cURL Error [' . $curlErrno . ']: ' . $curlError . ' - URL: ' . $url);
+            return null;
+        }
+        
+        // Handle HTTP errors
+        if ($httpCode != 200) {
+            error_log('API HTTP Error: ' . $httpCode . ' - URL: ' . $url . ' - Response: ' . substr($response, 0, 200));
+            return null;
+        }
+        
+        // Decode JSON response
+        $data = json_decode($response, true);
+        if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
+            error_log('JSON decode error: ' . json_last_error_msg() . ' - URL: ' . $url);
+            return null;
+        }
+        
+        return $data;
     }
-    
-    // Handle HTTP errors
-    if ($httpCode != 200) {
-        error_log('API HTTP Error: ' . $httpCode . ' - URL: ' . $url . ' - Response: ' . substr($response, 0, 200));
-        return null;
-    }
-    
-    // Decode JSON response
-    $data = json_decode($response, true);
-    if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
-        error_log('JSON decode error: ' . json_last_error_msg() . ' - URL: ' . $url);
-        return null;
-    }
-    
-    return $data;
 }
 
 /**
@@ -119,36 +121,38 @@ function fetchFromApi($url) {
  * @param mixed $response Raw response dari API
  * @return array Format konsisten: array('data' => [...])
  */
-function normalizeApiResponse($response) {
-    // Jika response kosong atau bukan array, kembalikan format standar
-    if (empty($response) || !is_array($response)) {
-        return array('data' => array());
-    }
-    
-    // Cek apakah response adalah array langsung (tanpa wrapper)
-    $keys = array_keys($response);
-    $isIndexedArray = (count($keys) > 0 && isset($keys[0]) && is_int($keys[0]));
-    
-    if ($isIndexedArray) {
-        // Ini adalah array langsung, bungkus dengan key 'data'
+if (!function_exists('normalizeApiResponse')) {
+    function normalizeApiResponse($response) {
+        // Jika response kosong atau bukan array, kembalikan format standar
+        if (empty($response) || !is_array($response)) {
+            return array('data' => array());
+        }
+        
+        // Cek apakah response adalah array langsung (tanpa wrapper)
+        $keys = array_keys($response);
+        $isIndexedArray = (count($keys) > 0 && isset($keys[0]) && is_int($keys[0]));
+        
+        if ($isIndexedArray) {
+            // Ini adalah array langsung, bungkus dengan key 'data'
+            return array('data' => $response);
+        }
+        
+        // Cek apakah ada wrapper 'data'
+        if (isset($response['data']) && is_array($response['data'])) {
+            return array('data' => $response['data']);
+        }
+        
+        // Cek wrapper alternatif: items, list, result, movies, videos
+        $wrapperKeys = array('items', 'list', 'result', 'movies', 'videos');
+        foreach ($wrapperKeys as $key) {
+            if (isset($response[$key]) && is_array($response[$key])) {
+                return array('data' => $response[$key]);
+            }
+        }
+        
+        // Jika tidak ada wrapper yang dikenali, kembalikan apa adanya
         return array('data' => $response);
     }
-    
-    // Cek apakah ada wrapper 'data'
-    if (isset($response['data']) && is_array($response['data'])) {
-        return array('data' => $response['data']);
-    }
-    
-    // Cek wrapper alternatif: items, list, result, movies, videos
-    $wrapperKeys = array('items', 'list', 'result', 'movies', 'videos');
-    foreach ($wrapperKeys as $key) {
-        if (isset($response[$key]) && is_array($response[$key])) {
-            return array('data' => $response[$key]);
-        }
-    }
-    
-    // Jika tidak ada wrapper yang dikenali, kembalikan apa adanya
-    return array('data' => $response);
 }
 
 /**
@@ -159,22 +163,24 @@ function normalizeApiResponse($response) {
  * @param string $content File content
  * @return boolean Success status
  */
-function atomicWrite($filename, $content) {
-    $tempFile = $filename . '.tmp';
-    
-    // Write to temp file with exclusive lock
-    if (file_put_contents($tempFile, $content, LOCK_EX) === false) {
+if (!function_exists('atomicWrite')) {
+    function atomicWrite($filename, $content) {
+        $tempFile = $filename . '.tmp';
+        
+        // Write to temp file with exclusive lock
+        if (file_put_contents($tempFile, $content, LOCK_EX) === false) {
+            return false;
+        }
+        
+        // Atomic rename
+        if (rename($tempFile, $filename)) {
+            return true;
+        }
+        
+        // Cleanup temp file if rename failed
+        @unlink($tempFile);
         return false;
     }
-    
-    // Atomic rename
-    if (rename($tempFile, $filename)) {
-        return true;
-    }
-    
-    // Cleanup temp file if rename failed
-    @unlink($tempFile);
-    return false;
 }
 
 /**
@@ -185,18 +191,18 @@ function atomicWrite($filename, $content) {
  * @param array $b Second item to compare
  * @return int Comparison result
  */
-function compareByPriority($a, $b) {
-    $priorityOrder = array('shortmax', 'flickreels', 'dramabox', 'reelshort', 'starshort', 'dramabite', 'goodshort', 'reelbuzz');
-    $providerA = isset($a['source_provider']) ? $a['source_provider'] : 'zzz';
-    $providerB = isset($b['source_provider']) ? $b['source_provider'] : 'zzz';
-    $priorityA = array_search($providerA, $priorityOrder);
-    $priorityB = array_search($providerB, $priorityOrder);
-    if ($priorityA === false) $priorityA = 999;
-    if ($priorityB === false) $priorityB = 999;
-    return $priorityA - $priorityB;
+if (!function_exists('compareByPriority')) {
+    function compareByPriority($a, $b) {
+        $priorityOrder = array('shortmax', 'flickreels', 'dramabox', 'reelshort', 'starshort', 'dramabite', 'goodshort', 'reelbuzz');
+        $providerA = isset($a['source_provider']) ? $a['source_provider'] : 'zzz';
+        $providerB = isset($b['source_provider']) ? $b['source_provider'] : 'zzz';
+        $priorityA = array_search($providerA, $priorityOrder);
+        $priorityB = array_search($providerB, $priorityOrder);
+        if ($priorityA === false) $priorityA = 999;
+        if ($priorityB === false) $priorityB = 999;
+        return $priorityA - $priorityB;
+    }
 }
-
-?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
