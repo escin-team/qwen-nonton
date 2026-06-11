@@ -1,0 +1,479 @@
+/* ==========================================
+   NONTONIN - STREAMING PLATFORM STYLES
+   Dark Mode Theme | Bootstrap 4 Compatible
+   ========================================== */
+
+/* ==========================================
+   1. GLOBAL STYLES
+   ========================================== */
+:root {
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-tertiary: #2a2a2a;
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --accent-color: #bb86fc;
+  --accent-hover: #9d6bdb;
+  --success-color: #00c853;
+  --danger-color: #ff5252;
+  --border-color: #333333;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar untuk Dark Mode */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
+
+/* ==========================================
+   2. NAVBAR STYLES
+   ========================================== */
+.navbar {
+  background-color: #000000 !important;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  padding: 15px 0;
+}
+
+.navbar-brand {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: var(--accent-color) !important;
+  transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+  color: var(--accent-hover) !important;
+  transform: scale(1.05);
+}
+
+.navbar-dark .navbar-nav .nav-link {
+  color: var(--text-primary) !important;
+  transition: color 0.3s ease;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+  color: var(--accent-color) !important;
+}
+
+/* ==========================================
+   3. CARD POSTER DRAMA
+   ========================================== */
+.card {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 10px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 15px 35px rgba(187, 134, 252, 0.3);
+  border-color: var(--accent-color) !important;
+}
+
+.card-img-top {
+  height: 280px;
+  object-fit: cover;
+  width: 100%;
+  transition: transform 0.3s ease;
+}
+
+.card:hover .card-img-top {
+  transform: scale(1.05);
+}
+
+.card-body {
+  padding: 12px !important;
+}
+
+.card-text {
+  color: var(--text-primary) !important;
+  font-size: 0.9em;
+  font-weight: 500;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Badge Provider di pojok card */
+.provider-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--accent-color);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7em;
+  font-weight: bold;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+
+/* Rating Badge */
+.rating-badge {
+  position: absolute;
+  bottom: 70px;
+  left: 10px;
+  background: rgba(255, 193, 7, 0.9);
+  color: #000;
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 0.75em;
+  font-weight: bold;
+  z-index: 10;
+}
+
+/* ==========================================
+   4. DETAIL PAGE STYLES
+   ========================================== */
+.drama-cover {
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  max-height: 450px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.drama-title {
+  color: var(--accent-color);
+  font-size: 2.2em;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.drama-meta {
+  color: var(--text-secondary);
+  font-size: 0.95em;
+  margin-bottom: 20px;
+}
+
+.drama-meta span {
+  margin-right: 15px;
+}
+
+.drama-synopsis {
+  color: var(--text-primary);
+  line-height: 1.8;
+  text-align: justify;
+  margin-bottom: 30px;
+}
+
+/* ==========================================
+   5. EPISODE BUTTONS
+   ========================================== */
+.episode-btn {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  margin: 5px !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  min-width: 70px;
+}
+
+.episode-btn:hover {
+  background-color: var(--accent-color) !important;
+  color: #000 !important;
+  border-color: var(--accent-color) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(187, 134, 252, 0.4);
+}
+
+.episode-btn.active {
+  background-color: var(--accent-color) !important;
+  color: #000 !important;
+  border-color: var(--accent-color) !important;
+}
+
+/* ==========================================
+   6. VIDEO PLAYER STYLES
+   ========================================== */
+.player-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: #000;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+}
+
+#dplayer {
+  width: 100%;
+  aspect-ratio: 16/9;
+}
+
+/* Override DPlayer theme */
+.dplayer {
+  border-radius: 15px;
+}
+
+.dplayer .dplayer-controller {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.9),
+    transparent
+  ) !important;
+}
+
+/* ==========================================
+   7. BUTTONS & FORMS
+   ========================================== */
+.btn-primary {
+  background-color: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+  color: #000 !important;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(187, 134, 252, 0.4);
+}
+
+.btn-outline-light {
+  border-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.btn-outline-light:hover {
+  background-color: var(--text-primary) !important;
+  color: #000 !important;
+}
+
+.form-control {
+  background-color: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px;
+  padding: 12px 15px;
+}
+
+.form-control:focus {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--accent-color) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(187, 134, 252, 0.25) !important;
+}
+
+/* ==========================================
+   8. ALERTS & MESSAGES
+   ========================================== */
+.alert {
+  border-radius: 10px;
+  border: none;
+  padding: 20px;
+}
+
+.alert-warning {
+  background-color: rgba(255, 193, 7, 0.15) !important;
+  color: #ffc107 !important;
+  border-left: 4px solid #ffc107;
+}
+
+.alert-danger {
+  background-color: rgba(255, 82, 82, 0.15) !important;
+  color: var(--danger-color) !important;
+  border-left: 4px solid var(--danger-color);
+}
+
+.alert-success {
+  background-color: rgba(0, 200, 83, 0.15) !important;
+  color: var(--success-color) !important;
+  border-left: 4px solid var(--success-color);
+}
+
+/* ==========================================
+   9. UTILITIES
+   ========================================== */
+.text-muted-custom {
+  color: var(--text-secondary) !important;
+}
+
+.bg-black {
+  background-color: #000 !important;
+}
+
+.text-decoration-none {
+  text-decoration: none !important;
+}
+
+.text-light {
+  color: var(--text-primary) !important;
+}
+
+/* Divider */
+hr.bg-secondary {
+  border-top: 1px solid var(--border-color) !important;
+  opacity: 0.5;
+  margin: 30px 0;
+}
+
+/* ==========================================
+   10. ANIMATIONS
+   ========================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Loading Spinner */
+.spinner {
+  border: 3px solid var(--bg-tertiary);
+  border-top: 3px solid var(--accent-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 50px auto;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================
+   11. RESPONSIVE DESIGN
+   ========================================== */
+@media (max-width: 768px) {
+  .card-img-top {
+    height: 220px;
+  }
+
+  .drama-title {
+    font-size: 1.6em;
+  }
+
+  .drama-cover {
+    max-height: 300px;
+    margin-bottom: 20px;
+  }
+
+  .episode-btn {
+    padding: 6px 12px !important;
+    font-size: 0.85em;
+    min-width: 60px;
+  }
+
+  .navbar-brand {
+    font-size: 1.4em;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-img-top {
+    height: 180px;
+  }
+
+  .card-text {
+    font-size: 0.8em;
+  }
+
+  .container {
+    padding: 0 10px;
+  }
+}
+
+/* ==========================================
+   12. SEARCH PAGE
+   ========================================== */
+.search-container {
+  max-width: 600px;
+  margin: 50px auto;
+  text-align: center;
+}
+
+.search-title {
+  color: var(--accent-color);
+  font-size: 2.5em;
+  margin-bottom: 30px;
+}
+
+.search-form .input-group {
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  border-radius: 50px;
+  overflow: hidden;
+}
+
+.search-form .form-control {
+  border-radius: 50px 0 0 50px !important;
+  padding: 15px 25px;
+  font-size: 1.1em;
+}
+
+.search-form .btn {
+  border-radius: 0 50px 50px 0 !important;
+  padding: 15px 30px;
+}
+
+/* ==========================================
+   13. FOOTER
+   ========================================== */
+.footer {
+  background-color: #000;
+  border-top: 1px solid var(--border-color);
+  padding: 30px 0;
+  margin-top: 50px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.footer a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--accent-hover);
+}

@@ -1,0 +1,13 @@
+RewriteEngine On
+RewriteBase /
+
+# 1. BLOKIR AKSES KE FOLDER SENSITIF (Anti Hack)
+RewriteRule ^(app|config|database|storage)(/|$) - [F,L,NC]
+
+# 2. IZINKAN FILE FISIK & FOLDER ASSET
+# Jika yang diminta adalah file asli (cron_aggregator.php, img_proxy.php) atau folder (assets), biarkan
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# 3. ROUTING MVC (Lempar ke index.php)
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
