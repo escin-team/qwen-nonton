@@ -107,10 +107,20 @@ function adaptHLSQuality(hls, networkQuality) {
 document.addEventListener('DOMContentLoaded', function() {
     const videoUrl = '<?php echo e($videoUrl); ?>';
     
+    console.log('[DEBUG] Video URL:', videoUrl);
+    console.log('[DEBUG] Hls.isSupported():', typeof Hls !== 'undefined' ? Hls.isSupported() : 'Hls not loaded');
+    
     if (videoUrl) {
         // Deteksi kualitas jaringan sebelum load video
         var networkQuality = getNetworkQuality();
         console.log('[Network] Kualitas jaringan terdeteksi: ' + networkQuality);
+        
+        // Cek apakah URL valid (harus mengandung .m3u8 atau merupakan URL http/https)
+        if (!videoUrl.match(/^https?:\/\//i)) {
+            console.error('[ERROR] Video URL tidak valid! Harus dimulai dengan http:// atau https://');
+            document.getElementById('dplayer').innerHTML = '<div class="alert alert-danger" style="padding:20px;text-align:center;"><h3>⚠️ Error: URL Video Tidak Valid</h3><p>URL yang diterima: ' + videoUrl + '</p><p>Silakan hubungi administrator.</p></div>';
+            return;
+        }
         
         const dp = new DPlayer({
             container: document.getElementById('dplayer'),
@@ -121,11 +131,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 type: 'hls',
                 customType: {
                     hls: function (video, player) {
+                        console.log('[HLS] Initializing HLS player...');
+                        
                         if (Hls.isSupported()) {
                             const hls = new Hls({
                                 enableWorker: true,
                                 lowLatencyMode: false,
-                                backBufferLength: 90
+                                backBufferLength: 90,
+                                debug: false // Set true untuk debugging detail
                             });
                             
                             hls.loadSource(video.src);
@@ -147,7 +160,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                             
                             hls.on(Hls.Events.ERROR, function (event, data) {
-                                console.error('HLS Error:', data);
+                                console.error('[HLS ERROR]', data);
+                                
+                                // Log detail error
+                                if (data.details) {
+                                    console.error('[HLS] Details:', data.details);
+                                }
+                                if (data.reason) {
+                                    console.error('[HLS] Reason:', data.reason);
+                                }
+                                
                                 if (data.fatal) {
                                     // Auto-recover dari fatal error
                                     switch (data.type) {
@@ -162,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         default:
                                             console.log('[HLS] Unrecoverable error, destroying player...');
                                             hls.destroy();
+                                            document.getElementById('dplayer').innerHTML = '<div class="alert alert-danger" style="padding:20px;text-align:center;"><h3>⚠️ Video Gagal Dimuat</h3><p>Error: ' + (data.details || 'Unknown error') + '</p><p>Mungkin penyebab:</p><ul style="text-align:left;max-width:400px;margin:10px auto;"><li>Link streaming kadaluarsa/rusak</li><li>Provider sedang maintenance</li><li>Pemblokiran CORS oleh CDN</li><li>Koneksi internet bermasalah</li></ul><p><a href="<?php echo url("drama/" . e($provider) . "/" . e($drama_id)); ?>" class="btn btn-primary">Kembali ke Daftar Episode</a></p></div>';
                                             break;
                                     }
                                 }
@@ -175,10 +198,18 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                             });
                             
+                            // Event ketika video mulai diputar
+                            hls.on(Hls.Events.FRAG_LOADED, function(event, data) {
+                                console.log('[HLS] Fragment loaded successfully');
+                            });
+                            
                         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                             // Fallback native untuk Safari/iOS
                             video.src = video.src;
                             console.log('[HLS] Using native HLS playback (Safari/iOS)');
+                        } else {
+                            console.error('[HLS] Browser tidak mendukung HLS!');
+                            document.getElementById('dplayer').innerHTML = '<div class="alert alert-warning" style="padding:20px;text-align:center;"><h3>⚠️ Browser Tidak Didukung</h3><p>Browser Anda tidak mendukung pemutaran HLS.</p><p>Silakan gunakan Chrome, Firefox, atau Safari versi terbaru.</p></div>';
                         }
                     }
                 }
