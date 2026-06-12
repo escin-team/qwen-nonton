@@ -1,60 +1,36 @@
+```
 # Compiled and build artifacts
 *.pyc
 __pycache__/
 *.o
 *.obj
-*.class
-*.exe
-*.dll
-*.so
-*.a
-*.out
 
 # Dependencies
-node_modules/
-venv/
 .venv/
-.env
-.env.local
-.env.*
+venv/
+node_modules/
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
 
+# Environment
+.env
+.env.local
+*.env.*
+
 # Editors
 .vscode/
 .idea/
-*.swp
-*.swo
-
-# System files
-.DS_Store
-Thumbs.db
 
 # Coverage
+.coverage
 coverage/
 htmlcov/
-.coverage
 
 # Distribution / packaging
 dist/
 build/
-*.tar.gz
-*.zip
-*.tar
-*.gz
-
-# Testing
-.phpunit.result.cache
-.phpunit.cache/
-
-# Laravel specific (if applicable)
-storage/
-bootstrap/cache/
-public/storage
-
-# Environment specific
-.env*
-!.env.example
+*.egg-info/
+```
