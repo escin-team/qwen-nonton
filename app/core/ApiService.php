@@ -267,15 +267,15 @@ class ApiService {
             if ((time() - $fileModTime) < $cacheTime) {
                 $cachedData = file_get_contents($cacheFile);
                 $data = json_decode($cachedData, true);
-                if ($data !== null) {
+                if ($data !== null && json_last_error() === JSON_ERROR_NONE && !isset($data['error'])) {
                     return $data;
                 }
             }
         }
         
-        // RETRY MECHANISM: 3x attempt dengan delay meningkat
-        $maxRetries = 3;
-        $retryDelays = array(2, 5, 10);
+        // BATAS BYETHOST 30 DETIK. Kita pakai max 2 attempt @ 10 detik = 20 detik.
+        $maxRetries = 2;
+        $retryDelays = array(2, 5);
         
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
             $ch = curl_init();
@@ -283,8 +283,8 @@ class ApiService {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10); // PENTING: Maksimal 10 detik per attempt
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
             
             // BYPASS SSL VERIFICATION - Diperlukan untuk ByetHost/AeonFree
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -310,6 +310,12 @@ class ApiService {
             if ($response !== false && $httpCode === 200) {
                 $data = json_decode($response, true);
                 if ($data !== null && json_last_error() === JSON_ERROR_NONE) {
+                    // CEK JIKA API MENGEMBALIKAN JSON ERROR (CONTOH: {"error": "Not Found"})
+                    if (isset($data['error']) || isset($data['errors']) || isset($data['message'])) {
+                        error_log("API returned error JSON (No Retry): {$url} - " . json_encode($data));
+                        return null; // LANGSUNG GAGAL, JANGAN RETRY KARENA ID MEMANG TIDAK ADA
+                    }
+                    
                     // Simpan ke cache jika cacheTime > 0
                     if ($cacheTime > 0) {
                         $jsonData = json_encode($data);
