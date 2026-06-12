@@ -24,6 +24,17 @@
             <p><small>Silakan coba episode lain atau kembali ke halaman detail.</small></p>
             <a href="<?php echo url('drama/' . e($provider) . '/' . e($drama_id)); ?>" class="btn btn-primary mt-3">Lihat Daftar Episode</a>
         </div>
+        
+        <!-- Debug Info (Hanya untuk development) -->
+        <?php if (defined('DEBUG_MODE') && DEBUG_MODE): ?>
+        <div class="alert alert-info text-left" style="max-width: 800px; margin: 20px auto; font-size: 12px;">
+            <strong>Debug Info:</strong><br>
+            Provider: <?php echo e($provider); ?><br>
+            Drama ID: <?php echo e($drama_id); ?><br>
+            Episode: <?php echo e($episode); ?><br>
+            Video URL: <?php echo empty($videoUrl) ? '(empty)' : e(substr($videoUrl, 0, 100)); ?>
+        </div>
+        <?php endif; ?>
     <?php else: ?>
         <div class="player-container">
             <div id="dplayer"></div>
