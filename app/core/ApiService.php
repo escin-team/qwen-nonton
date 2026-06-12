@@ -273,66 +273,66 @@ class ApiService {
             }
         }
         
-        // Inisialisasi cURL
-        $ch = curl_init();
+        // RETRY MECHANISM: 3x attempt dengan delay meningkat
+        $maxRetries = 3;
+        $retryDelays = array(2, 5, 10);
         
-        // Opsi cURL - CRITICAL untuk ByetHost/AeonFree
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Mencegah hanging
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        
-        // BYPASS SSL VERIFICATION - Diperlukan untuk ByetHost/AeonFree
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        
-        // Set headers dengan Bearer Token Authentication
-        $headers = array(
-            'Authorization: Bearer ' . $this->apiToken,
-            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept: application/json, text/plain, */*',
-            'Accept-Language: en-US,en;q=0.9',
-            'Content-Type: application/json'
-        );
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        
-        // Eksekusi request
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        $curlErrno = curl_errno($ch);
-        curl_close($ch);
-        
-        // Handle cURL errors
-        if ($curlErrno != 0 || !$response) {
-            error_log('API cURL Error [' . $curlErrno . ']: ' . $curlError . ' - URL: ' . $url);
-            return null;
-        }
-        
-        // Handle HTTP errors
-        if ($httpCode != 200) {
-            error_log('API HTTP Error: ' . $httpCode . ' - URL: ' . $url . ' - Response: ' . substr($response, 0, 200));
-            return null;
-        }
-        
-        // Decode JSON response
-        $data = json_decode($response, true);
-        if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
-            error_log('JSON decode error: ' . json_last_error_msg() . ' - URL: ' . $url);
-            return null;
-        }
-        
-        // Simpan ke cache jika cacheTime > 0
-        if ($cacheTime > 0) {
-            $jsonData = json_encode($data);
-            if ($jsonData !== false) {
-                file_put_contents($cacheFile, $jsonData, LOCK_EX);
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+            
+            // BYPASS SSL VERIFICATION - Diperlukan untuk ByetHost/AeonFree
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            
+            // Set headers dengan Bearer Token Authentication
+            $headers = array(
+                'Authorization: Bearer ' . $this->apiToken,
+                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept: application/json, text/plain, */*',
+                'Accept-Language: en-US,en;q=0.9',
+                'Content-Type: application/json'
+            );
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            
+            // Eksekusi request
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            $curlErrno = curl_errno($ch);
+            curl_close($ch);
+            
+            if ($response !== false && $httpCode === 200) {
+                $data = json_decode($response, true);
+                if ($data !== null && json_last_error() === JSON_ERROR_NONE) {
+                    // Simpan ke cache jika cacheTime > 0
+                    if ($cacheTime > 0) {
+                        $jsonData = json_encode($data);
+                        if ($jsonData !== false) {
+                            file_put_contents($cacheFile, $jsonData, LOCK_EX);
+                        }
+                    }
+                    error_log("API Success (attempt {$attempt}): {$url}");
+                    return $data;
+                }
+            }
+            
+            error_log("API Attempt {$attempt}/{$maxRetries} failed: {$url} - HTTP {$httpCode} - {$curlError}");
+            
+            if ($attempt < $maxRetries) {
+                $delay = $retryDelays[$attempt - 1];
+                error_log("Retrying in {$delay} seconds...");
+                sleep($delay);
             }
         }
         
-        return $data;
+        error_log("API FAILED after {$maxRetries} attempts: {$url}");
+        return null;
     }
     
     /**
