@@ -49,7 +49,7 @@ class HomeController extends Controller {
                     error_log('Homepage: Loaded ' . count($allDramas) . ' items from cache (age: ' . round($cacheAge/3600, 1) . 'h)');
                     shuffle($allDramas);
                     $allDramas = array_slice($allDramas, 0, 60);
-                    view('home/index', array(
+                    $this->view('home/index', array(
                         'title' => $title,
                         'dramas' => $allDramas,
                         'cache_info' => array('source' => 'file_cache', 'age' => round($cacheAge/3600, 1))
@@ -82,6 +82,6 @@ class HomeController extends Controller {
         }
         shuffle($allDramas);
         $allDramas = array_slice($allDramas, 0, 60);
-        view('home/index', array('title' => $title, 'dramas' => $allDramas, 'cache_info' => array('source' => 'api_fallback', 'ok' => $successful, 'err' => $failed)));
+        $this->view('home/index', array('title' => $title, 'dramas' => $allDramas, 'cache_info' => array('source' => 'api_fallback', 'ok' => $successful, 'err' => $failed)));
     }
 }
