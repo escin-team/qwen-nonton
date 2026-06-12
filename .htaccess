@@ -1,13 +1,43 @@
-RewriteEngine On
-RewriteBase /
+# Enable Rewrite Engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
 
-# 1. BLOKIR AKSES KE FOLDER SENSITIF (Anti Hack)
-RewriteRule ^(app|config|database|storage)(/|$) - [F,L,NC]
+    # 1. FORCE HTTPS (Opsional - Uncomment jika punya SSL)
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# 2. IZINKAN FILE FISIK & FOLDER ASSET
-# Jika yang diminta adalah file asli (cron_aggregator.php, img_proxy.php) atau folder (assets), biarkan
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+    # 2. BLOKIR AKSES KE FOLDER SENSITIF (Anti Hack)
+    RewriteRule ^(app|config|database|storage)(/|$) - [F,L,NC]
 
-# 3. ROUTING MVC (Lempar ke index.php)
-RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+    # 3. IZINKAN FILE FISIK & FOLDER ASSET
+    # Jika file/folder benar-benar ada di filesystem, langsung serve (tidak lewat index.php)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # 4. ROUTING MVC (Lempar ke index.php)
+    # Semua request yang bukan file fisik akan diproses oleh index.php
+    RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+</IfModule>
+
+# 5. CUSTOM ERROR PAGES (Fallback jika ModRewrite mati)
+ErrorDocument 404 /index.php?url=404
+ErrorDocument 500 /index.php?url=500
+
+# 6. SECURITY HEADERS
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# 7. DISABLE DIRECTORY LISTING
+Options -Indexes
+
+# 8. PHP SETTINGS (Byet.host compatible)
+<IfModule mod_php7.c>
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value error_log /home/vol15_7/byethost17.com/b17_42158260/htdocs/logs/error.log
+</IfModule>
