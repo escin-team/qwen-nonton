@@ -138,9 +138,10 @@ class DramaController extends Controller {
             
             $streamUrl = null;
             $usedProvider = $provider;
-            $fallbackProviders = array('flickreels', 'dramabos', 'bilibili', 'freereels', 'wetv', 'iqiyi');
             
-            error_log("[WATCH] Trying primary provider: {$provider}");
+            // HANYA COBA PROVIDER ASLI. JANGAN PAKSA FALLBACK KE PROVIDER LAIN 
+            // KARENA ID DRAMA TIAP PROVIDER PASTI BERBEDA.
+            error_log("[WATCH] Trying provider: {$provider} for ID: {$id}, Ep: {$ep}");
             $stream_res = $api->getStreamUrl($provider, $id, $ep, 30);
             
             // Ekstrak URL dari response
@@ -159,41 +160,12 @@ class DramaController extends Controller {
             }
             
             if (empty($streamUrl)) {
-                error_log("[WATCH] Primary provider failed. Trying fallbacks...");
+                error_log("[WATCH] Provider {$provider} FAILED or returned error for episode {$ep}");
                 
-                foreach ($fallbackProviders as $fallback) {
-                    if ($fallback === $provider) continue;
-                    
-                    error_log("[WATCH] Trying fallback provider: {$fallback}");
-                    $stream_res = $api->getStreamUrl($fallback, $id, $ep, 30);
-                    
-                    if ($stream_res) {
-                        if (isset($stream_res['hlsUrl']) && !empty($stream_res['hlsUrl'])) {
-                            $streamUrl = $stream_res['hlsUrl'];
-                        } elseif (isset($stream_res['data']['hlsUrl']) && !empty($stream_res['data']['hlsUrl'])) {
-                            $streamUrl = $stream_res['data']['hlsUrl'];
-                        } elseif (isset($stream_res['data']['url']) && !empty($stream_res['data']['url'])) {
-                            $streamUrl = $stream_res['data']['url'];
-                        } elseif (isset($stream_res['url']) && !empty($stream_res['url'])) {
-                            $streamUrl = $stream_res['url'];
-                        } elseif (is_string($stream_res) && strpos($stream_res, '.m3u8') !== false) {
-                            $streamUrl = $stream_res;
-                        }
-                    }
-                    
-                    if (!empty($streamUrl)) {
-                        $usedProvider = $fallback;
-                        error_log("[WATCH] Fallback SUCCESS: {$fallback}");
-                        break;
-                    }
-                }
-            }
-            
-            if (empty($streamUrl)) {
-                error_log("[WATCH] ALL PROVIDERS FAILED for episode {$ep}");
+                // TAMPILKAN HALAMAN ERROR YANG JELAS, JANGAN CRASH 500
                 $this->view('player/error', array(
                     'title' => 'Video Tidak Tersedia',
-                    'message' => 'Maaf, video sedang tidak dapat diputar saat ini. Silakan coba lagi beberapa saat lagi atau pilih episode lain.',
+                    'message' => 'Maaf, server streaming untuk drama ini sedang mengalami gangguan (Timeout/Down). Silakan coba lagi dalam beberapa menit atau pilih drama lain.',
                     'episode' => $ep
                 ));
                 return;
