@@ -149,16 +149,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                 enableWorker: true,
                                 lowLatencyMode: false,
                                 backBufferLength: 90,
-                                debug: false // Set true untuk debugging detail
+                                debug: false
                             });
                             
                             hls.loadSource(video.src);
                             hls.attachMedia(video);
                             
-                            // Adaptasi kualitas berdasarkan jaringan
                             adaptHLSQuality(hls, networkQuality);
                             
-                            // Monitor perubahan jaringan secara real-time
                             if ('connection' in navigator) {
                                 var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
                                 if (conn && conn.addEventListener) {
@@ -173,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             hls.on(Hls.Events.ERROR, function (event, data) {
                                 console.error('[HLS ERROR]', data);
                                 
-                                // Log detail error
                                 if (data.details) {
                                     console.error('[HLS] Details:', data.details);
                                 }
@@ -182,7 +179,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                                 
                                 if (data.fatal) {
-                                    // Auto-recover dari fatal error
                                     switch (data.type) {
                                         case Hls.ErrorTypes.NETWORK_ERROR:
                                             console.log('[HLS] Network error, attempting recovery...');
@@ -201,7 +197,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                             });
                             
-                            // Log level yang tersedia
                             hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
                                 console.log('[HLS] Manifest parsed. Available levels:', data.levels.length);
                                 for (var i = 0; i < data.levels.length; i++) {
@@ -209,13 +204,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                             });
                             
-                            // Event ketika video mulai diputar
                             hls.on(Hls.Events.FRAG_LOADED, function(event, data) {
                                 console.log('[HLS] Fragment loaded successfully');
                             });
                             
                         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                            // Fallback native untuk Safari/iOS
                             video.src = video.src;
                             console.log('[HLS] Using native HLS playback (Safari/iOS)');
                         } else {
@@ -225,6 +218,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+        });
+        
+        // FALLBACK VIDEO PROXY
+        let proxyFallbackTriggered = false;
+        const directVideoUrl = dp.options.video.url || '<?php echo e($videoUrl); ?>';
+
+        dp.on('error', function() {
+            if (proxyFallbackTriggered) return;
+            console.warn('Stream error detected. Switching to proxy fallback...');
+            proxyFallbackTriggered = true;
+            const proxyUrl = '<?php echo url('video_proxy.php?url='); ?>' + encodeURIComponent(directVideoUrl);
+            
+            try {
+                dp.switchVideo({ url: proxyUrl, type: 'hls' });
+                setTimeout(() => { dp.play(); }, 1200);
+            } catch(e) { console.error('Fallback switch failed:', e); }
         });
         
         // Tampilkan info kualitas jaringan di console

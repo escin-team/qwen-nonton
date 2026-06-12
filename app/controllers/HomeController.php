@@ -34,104 +34,54 @@ class HomeController extends Controller {
         }
     }
     
-    /**
-     * Display homepage - Mengambil trending dari 6-7 provider terverifikasi
-     * - Loop melalui setiap provider dengan try-catch individual
-     * - Gabungkan semua drama ke array besar
-     * - Tambahkan field source_provider ke setiap drama
-     * - Shuffle untuk variasi dan ambil 60 teratas
-     * - Kirim ke view dengan variable $dramas dan $title
-     */
     public function index() {
-        $allDramas = array();
-        $successfulProviders = array();
-        $failedProviders = array();
-        
-        // Judul halaman
         $title = 'Nontonin - Streaming Drama Asia Terbaru';
+        $allDramas = array();
+        $cacheFile = __DIR__ . '/../../storage/cache/global_feed.json';
         
-        // Loop melalui 6 provider terverifikasi
-        foreach ($this->verifiedProviders as $provider) {
-            try {
-                // Ambil trending dari provider (cache 6 jam = 21600 detik)
-                $result = $this->apiService->getTrending($provider, 21600);
-                
-                // Cek apakah result ada dan punya data
-                if (!empty($result) && isset($result['data']) && is_array($result['data'])) {
-                    $dramas = $result['data'];
-                    
-                    // Tambahkan field source_provider ke setiap drama
-                    foreach ($dramas as &$drama) {
-                        if (is_array($drama)) {
-                            // Tambahkan tag source_provider
-                            $drama['source_provider'] = $provider;
-                            
-                            // Pastikan ID ada untuk URL generation
-                            if (!isset($drama['id']) || empty($drama['id'])) {
-                                if (isset($drama['drama_id']) && !empty($drama['drama_id'])) {
-                                    $drama['id'] = $drama['drama_id'];
-                                }
-                            }
-                            
-                            // Normalisasi field title jika ada variasi
-                            if (!isset($drama['title']) && isset($drama['name'])) {
-                                $drama['title'] = $drama['name'];
-                            }
-                            
-                            // Normalisasi field cover jika ada variasi
-                            if (!isset($drama['cover']) && isset($drama['poster'])) {
-                                $drama['cover'] = $drama['poster'];
-                            }
-                            
-                            // Bersihkan URL cover dari spasi di akhir (issue umum dari API)
-                            if (isset($drama['cover']) && is_string($drama['cover'])) {
-                                $drama['cover'] = trim($drama['cover']);
-                            }
-                        }
-                    }
-                    unset($drama); // Putuskan referensi
-                    
-                    // Gabungkan ke array besar
-                    $allDramas = array_merge($allDramas, $dramas);
-                    $successfulProviders[] = $provider;
-                    
-                    // Catat progress ke error log untuk debugging
-                    error_log('HomeController: Berhasil ambil ' . count($dramas) . ' drama dari ' . $provider);
-                } else {
-                    // Response kosong atau tidak valid
-                    error_log('HomeController: Response kosong dari ' . $provider);
-                    $failedProviders[] = $provider . ' (response kosong)';
+        if (file_exists($cacheFile) && is_readable($cacheFile)) {
+            $cacheAge = time() - filemtime($cacheFile);
+            if ($cacheAge < 21600) {
+                $jsonContent = file_get_contents($cacheFile);
+                $cachedData = json_decode($jsonContent, true);
+                if (json_last_error() === JSON_ERROR_NONE && isset($cachedData['data'])) {
+                    $allDramas = $cachedData['data'];
+                    error_log('Homepage: Loaded ' . count($allDramas) . ' items from cache (age: ' . round($cacheAge/3600, 1) . 'h)');
+                    shuffle($allDramas);
+                    $allDramas = array_slice($allDramas, 0, 60);
+                    view('home/index', array(
+                        'title' => $title,
+                        'dramas' => $allDramas,
+                        'cache_info' => array('source' => 'file_cache', 'age' => round($cacheAge/3600, 1))
+                    ));
+                    return;
                 }
-                
-            } catch (Exception $e) {
-                // Catch error per provider - JANGAN biarkan error menyebar!
-                error_log('HomeController: Error pada provider ' . $provider . ' - ' . $e->getMessage());
-                $failedProviders[] = $provider . ' (' . $e->getMessage() . ')';
-                continue; // Lanjut ke provider berikutnya
             }
         }
         
-        // Shuffle array untuk variasi konten dari berbagai provider
-        if (!empty($allDramas)) {
-            shuffle($allDramas);
-            
-            // Ambil 60 drama teratas
-            $allDramas = array_slice($allDramas, 0, 60);
+        error_log('Homepage: Cache miss, fallback to API');
+        $successful = array(); $failed = array();
+        foreach ($this->verifiedProviders as $provider) {
+            try {
+                $result = $this->apiService->getTrending($provider, 21600);
+                if (!empty($result) && isset($result['data']) && is_array($result['data'])) {
+                    $dramas = $result['data'];
+                    foreach ($dramas as &$d) {
+                        if (is_array($d)) {
+                            $d['source_provider'] = $provider;
+                            if (!isset($d['id']) && isset($d['drama_id'])) $d['id'] = $d['drama_id'];
+                            if (!isset($d['title']) && isset($d['name'])) $d['title'] = $d['name'];
+                            if (!isset($d['cover']) && isset($d['poster'])) $d['cover'] = $d['poster'];
+                            if (isset($d['cover'])) $d['cover'] = trim($d['cover']);
+                        }
+                    } unset($d);
+                    $allDramas = array_merge($allDramas, $dramas);
+                    $successful[] = $provider;
+                } else { $failed[] = $provider . '(empty)'; }
+            } catch (Exception $e) { error_log('API Error: ' . $provider . ': ' . $e->getMessage()); $failed[] = $provider . '(error)'; }
         }
-        
-        // Catat ringkasan ke error log
-        error_log('HomeController: Total ' . count($allDramas) . ' drama dari ' . count($successfulProviders) . ' provider berhasil');
-        if (!empty($failedProviders)) {
-            error_log('HomeController: Provider gagal: ' . implode(', ', $failedProviders));
-        }
-        
-        // Kirim data ke view
-        $this->view('home/index', array(
-            'dramas' => $allDramas,
-            'title' => $title,
-            'total_dramas' => count($allDramas),
-            'successful_providers' => $successfulProviders,
-            'failed_providers' => $failedProviders
-        ));
+        shuffle($allDramas);
+        $allDramas = array_slice($allDramas, 0, 60);
+        view('home/index', array('title' => $title, 'dramas' => $allDramas, 'cache_info' => array('source' => 'api_fallback', 'ok' => $successful, 'err' => $failed)));
     }
 }
