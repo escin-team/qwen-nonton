@@ -1,66 +1,25 @@
-```php
 # Compiled and build artifacts
 *.pyc
-*.class
-*.o
-*.obj
-*.exe
-*.dll
-*.so
-*.a
-*.out
-*.jar
-*.war
-*.zip
-*.tar.gz
-*.tar.bz2
-*.tar.xz
+__pycache__/
 
 # Dependencies
-node_modules/
 vendor/
 composer.lock
-*.lock
-__pycache__/
-*.egg-info/
-.eggs/
-build/
-dist/
-target/
-.gradle/
-.cargo/
-Cargo.lock
-.Python-version
-.envrc
-.env
-.env.local
-.env.*
-.coverage
-coverage/
-htmlcov/
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
+
+# Environment
+.env
+.env.local
+*.env.*
 
 # Editors
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
 
-# PHP specific
-*.phar
-*.pid
-.htaccess
-web.config
-
-# Original rules preserved
-*.log
-```
+# OS generated files
+.DS_Store
+Thumbs.db
