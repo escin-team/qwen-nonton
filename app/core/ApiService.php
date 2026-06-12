@@ -472,10 +472,13 @@ class ApiService {
      * @param int $cacheTime Cache duration in seconds (short cache for streams)
      * @return array|null Stream data with m3u8 URL
      */
-    public function getStreamUrl($provider, $dramaId, $episodeNum, $cacheTime = 900) {
+    public function getStreamUrl($provider, $dramaId, $episodeNum, $cacheTime = 30) {
         $providerLower = strtolower($provider);
         $encodedId = urlencode($dramaId);
         $encodedEp = urlencode($episodeNum);
+        
+        // Debug logging
+        error_log('[STREAM] Provider: ' . $provider . ', ID: ' . $dramaId . ', Episode: ' . $episodeNum);
         
         // Cek mapping endpoint stream per provider
         if (isset($this->streamMap[$providerLower])) {
@@ -496,10 +499,24 @@ class ApiService {
             $endpoint = '/' . $providerLower . '/api/v1/play/' . $encodedId . '/' . $encodedEp;
         }
         
-        $rawResponse = $this->makeRequest($this->baseUrl . $endpoint, $cacheTime);
+        $fullUrl = $this->baseUrl . $endpoint;
+        error_log('[STREAM] Request URL: ' . $fullUrl);
+        
+        // BYPASS CACHE untuk streaming - selalu ambil data fresh dari API
+        $rawResponse = $this->makeRequest($fullUrl, 0); // Cache 0 = no cache
         
         if ($rawResponse === null) {
+            error_log('[STREAM] API returned NULL for ' . $provider . ' episode ' . $episodeNum);
             return null;
+        }
+        
+        // Debug response structure
+        error_log('[STREAM] Response keys: ' . implode(', ', array_keys($rawResponse)));
+        if (isset($rawResponse['hlsUrl'])) {
+            error_log('[STREAM] Found hlsUrl directly in response');
+        }
+        if (isset($rawResponse['data'])) {
+            error_log('[STREAM] Found data wrapper, keys: ' . (is_array($rawResponse['data']) ? implode(', ', array_keys($rawResponse['data'])) : 'not array'));
         }
         
         return $this->normalizeResponse($rawResponse);

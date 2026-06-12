@@ -24,6 +24,9 @@ ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 ini_set('error_log', dirname(__DIR__) . '/storage/logs/php_error.log');
 
+// Debug mode flag untuk development
+define('DEBUG_MODE', true);
+
 // ==========================================
 // 2. SESSION MANAGEMENT
 // ==========================================
